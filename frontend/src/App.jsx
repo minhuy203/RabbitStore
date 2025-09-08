@@ -17,7 +17,7 @@ import UserManagement from "./components/Admin/UserManagement";
 import ProductManagement from "./components/Admin/ProductManagement";
 import EditProductpage from "./components/Admin/EditProductpage";
 import OrderManagement from "./components/Admin/OrderManagement";
-import CreateProductpage from "./components/Admin/createProductpage";
+import CreateProductpage from "./components/Admin/CreateProductpage";
 
 import { Provider } from "react-redux";
 import store from "./redux/store";
