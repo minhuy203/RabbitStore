@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { toast } from "sonner";
 import ProductGrid from "./ProductGrid";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import {
   fetchProductsDetails,
@@ -12,6 +12,7 @@ import { addToCart, fetchCart } from "../../redux/slices/cartSlice";
 const ProductDetails = ({ productId }) => {
   const { id } = useParams();
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const { selectedProduct, loading, error, similarProducts } = useSelector(
     (state) => state.products
   );
@@ -124,10 +125,20 @@ const ProductDetails = ({ productId }) => {
         discountPrice: selectedProduct.discountPrice || null,
         image: mainImage,
       })
-    ).then(() => {
-      dispatch(fetchCart({ userId: user?._id, guestId }));
-      window.location.href = "/checkout"; // điều hướng tới checkout
-    });
+    )
+      .then(() => {
+        dispatch(fetchCart({ userId: user?._id, guestId }));
+        if (!user) {
+          navigate("/login?redirect=checkout");
+        } else {
+          navigate("/checkout");
+        }
+      })
+      .catch((error) => {
+        toast.error("Lỗi khi thêm vào giỏ hàng: " + error.message, {
+          duration: 1000,
+        });
+      });
   };
 
   if (loading) return <p>Đang tải...</p>;
