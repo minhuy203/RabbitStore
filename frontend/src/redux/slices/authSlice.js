@@ -26,11 +26,10 @@ export const loginUser = createAsyncThunk(
       );
       localStorage.setItem("userInfo", JSON.stringify(response.data.user));
       localStorage.setItem("userToken", response.data.token);
-
       return response.data.user;
     } catch (error) {
       return rejectWithValue(
-        error.response?.data || { message: "Đăng nhập thất bại" }
+        error.response?.data?.message || "Thông tin đăng nhập không đúng!"
       );
     }
   }
@@ -46,11 +45,10 @@ export const registerUser = createAsyncThunk(
       );
       localStorage.setItem("userInfo", JSON.stringify(response.data.user));
       localStorage.setItem("userToken", response.data.token);
-
       return response.data.user;
     } catch (error) {
       return rejectWithValue(
-        error.response?.data || { message: "Đăng ký thất bại" }
+        error.response?.data?.message || "Đăng ký thất bại!"
       );
     }
   }
@@ -62,7 +60,7 @@ const authSlice = createSlice({
   reducers: {
     logout: (state) => {
       state.user = null;
-      state.guestId = `guest_${new Date().getTime()}`; // Sửa lỗi cú pháp: guest+ -> guest_
+      state.guestId = `guest_${new Date().getTime()}`;
       localStorage.removeItem("userInfo");
       localStorage.removeItem("userToken");
       localStorage.setItem("guestId", state.guestId);
@@ -70,6 +68,9 @@ const authSlice = createSlice({
     generateNewGuestId: (state) => {
       state.guestId = `guest_${new Date().getTime()}`;
       localStorage.setItem("guestId", state.guestId);
+    },
+    clearError: (state) => {
+      state.error = null;
     },
   },
   extraReducers: (builder) => {
@@ -81,10 +82,11 @@ const authSlice = createSlice({
       .addCase(loginUser.fulfilled, (state, action) => {
         state.loading = false;
         state.user = action.payload;
+        state.error = null;
       })
       .addCase(loginUser.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.payload.message || "Đăng nhập thất bại";
+        state.error = action.payload;
       })
       .addCase(registerUser.pending, (state) => {
         state.loading = true;
@@ -93,13 +95,14 @@ const authSlice = createSlice({
       .addCase(registerUser.fulfilled, (state, action) => {
         state.loading = false;
         state.user = action.payload;
+        state.error = null;
       })
       .addCase(registerUser.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.payload.message || "Đăng ký thất bại";
+        state.error = action.payload;
       });
   },
 });
 
-export const { logout, generateNewGuestId } = authSlice.actions;
+export const { logout, generateNewGuestId, clearError } = authSlice.actions;
 export default authSlice.reducer;

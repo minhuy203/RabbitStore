@@ -1,16 +1,17 @@
 import React, { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import login from "../assets/login.webp";
-import { loginUser } from "../redux/slices/authSlice";
-import { useDispatch, useSelector } from "react-redux";
+import { loginUser, clearError } from "../redux/slices/authSlice";
 import { mergeCart } from "../redux/slices/cartSlice";
+import { useDispatch, useSelector } from "react-redux";
+
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, guestId } = useSelector((state) => state.auth);
+  const { user, guestId, error } = useSelector((state) => state.auth);
   const { cart } = useSelector((state) => state.cart);
 
   const redirect = new URLSearchParams(location.search).get("redirect") || "/";
@@ -34,8 +35,8 @@ const Login = () => {
   };
 
   return (
-    <div className="flex ">
-      <div className="w-full md:w-1/2 flex-col justify-center items-center p-8 md:p-12 flex ">
+    <div className="flex">
+      <div className="w-full md:w-1/2 flex-col justify-center items-center p-8 md:p-12 flex">
         <form
           onSubmit={handleSubmit}
           className="w-full max-w-md bg-white p-8 rounded-lg border shadow-sm"
@@ -44,15 +45,23 @@ const Login = () => {
             <h2 className="text-xl font-medium">RabbitStore</h2>
           </div>
           <h2 className="text-2xl font-bold text-center mb-6">Xin chào! 👋</h2>
-          <p className="text-center mb-6">
+          <p className="text-center mb-4">
             Hãy điền email và mật khẩu để đăng nhập.
           </p>
+          {error && (
+            <p className="text-red-500 text-center mb-4">
+              Thông tin đăng nhập không đúng!
+            </p>
+          )}
           <div className="mb-4">
             <label className="block text-sm font-semibold mb-2">Email</label>
             <input
               type="email"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e) => {
+                setEmail(e.target.value);
+                dispatch(clearError());
+              }}
               className="w-full p-2 border rounded"
               placeholder="Nhập địa chỉ email"
             />
@@ -62,7 +71,10 @@ const Login = () => {
             <input
               type="password"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={(e) => {
+                setPassword(e.target.value);
+                dispatch(clearError());
+              }}
               className="w-full p-2 border rounded"
               placeholder="Nhập mật khẩu của bạn"
             />
