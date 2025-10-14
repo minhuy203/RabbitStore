@@ -12,6 +12,21 @@ router.post("/register", async (req, res) => {
   const { name, email, password } = req.body;
 
   try {
+    // Kiểm tra độ dài mật khẩu
+    if (password.length < 6) {
+      return res
+        .status(400)
+        .json({ message: "Mật khẩu phải có ít nhất 6 ký tự!" });
+    }
+
+    // Kiểm tra định dạng mật khẩu
+    const passwordRegex = /^[a-zA-Z0-9]+$/;
+    if (!passwordRegex.test(password)) {
+      return res
+        .status(400)
+        .json({ message: "Mật khẩu chỉ được chứa chữ cái và số!" });
+    }
+
     // Register logic
     let user = await User.findOne({ email });
 
