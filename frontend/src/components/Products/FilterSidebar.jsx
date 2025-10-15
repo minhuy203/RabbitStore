@@ -104,7 +104,10 @@ const FilterSidebar = () => {
   };
 
   const handleColorChange = (color) => {
-    const newFilters = { ...filters, color: filters.color === color ? "" : color };
+    const newFilters = {
+      ...filters,
+      color: filters.color === color ? "" : color,
+    };
     setFilters(newFilters);
     updateURLParams(newFilters);
   };

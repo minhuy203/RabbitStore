@@ -53,7 +53,7 @@ const CollectionPage = () => {
         ref={sidebarRef}
         className={`${
           isSidebarOpen ? "translate-x-0" : "-translate-x-full"
-        } fixed inset-y-0 left-0 z-40 w-64 min-w-[16rem] bg-white overflow-y-auto transition-transform duration-300 lg:static lg:translate-x-0 lg:w-64 lg:min-w-[16rem] lg:h-screen lg:sticky lg:top-0`}
+        } fixed inset-y-0 left-0 z-40 w-64 min-w-[16rem] bg-white overflow-y-auto transition-transform duration-300 lg:sticky lg:top-0 lg:w-64 lg:min-w-[16rem] lg:h-screen`}
       >
         <FilterSidebar />
       </div>
