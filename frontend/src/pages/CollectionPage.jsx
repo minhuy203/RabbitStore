@@ -60,13 +60,13 @@ const CollectionPage = () => {
         ref={sidebarRef}
         className={`${
           isSidebarOpen ? "translate-x-0" : "-translate-x-full"
-        } fixed inset-y-0 left-0 z-40 w-64 min-w-[16rem] bg-white transition-transform duration-300 lg:sticky lg:top-0 lg:w-64 lg:min-w-[16rem] lg:h-screen lg:translate-x-0`}
+        } fixed inset-y-0 left-0 z-40 w-64 min-w-[16rem] bg-white overflow-y-auto transition-transform duration-300 lg:sticky lg:top-0 lg:w-64 lg:min-w-[16rem] lg:h-screen lg:translate-x-0`}
       >
         <FilterSidebar />
       </div>
 
       {/* Main content */}
-      <div className="flex-1 p-2 lg:p-4 lg:ml-64 lg:pl-2 max-w-full overflow-x-hidden">
+      <div className="flex-1 p-4 lg:ml-64 max-w-full overflow-x-hidden">
         <h2 className="text-2xl uppercase font-medium mb-4">
           Tất cả bộ sưu tập
         </h2>
