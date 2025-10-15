@@ -172,22 +172,45 @@ const FilterSidebar = () => {
       {/* color */}
       <div className="mb-6">
         <label className="block text-gray-600 font-medium mb-2">Màu</label>
-        <div className="flex flex-wrap gap-2">
+        <div className="grid grid-cols-5 gap-2">
           {colors.map((color) => (
-            <div key={color} className="flex items-center mb-1">
+            <div key={color} className="relative group">
               <input
                 type="checkbox"
                 name="color"
                 value={color}
                 checked={filters.color.includes(color)}
                 onChange={handleFilterChange}
-                className="mr-2 h-4 w-4 text-blue-500 focus:ring-blue-400 border-gray-300"
+                className="absolute opacity-0 h-0 w-0"
               />
-              <span
-                className="w-6 h-6 rounded-full border border-gray-300 inline-block mr-2"
+              <label
+                className={`flex items-center justify-center w-10 h-10 rounded-full border-2 cursor-pointer transition-transform duration-200 hover:scale-110 ${
+                  filters.color.includes(color)
+                    ? "border-blue-500 shadow-lg scale-105"
+                    : "border-gray-300"
+                }`}
                 style={{ backgroundColor: colorMap[color] || "#CCCCCC" }}
-              ></span>
-              <span className="text-gray-700">{color}</span>
+              >
+                {filters.color.includes(color) && (
+                  <svg
+                    className="w-5 h-5 text-white"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M5 13l4 4L19 7"
+                    />
+                  </svg>
+                )}
+              </label>
+              <span className="absolute bottom-12 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs rounded py-1 px-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                {color}
+              </span>
             </div>
           ))}
         </div>
