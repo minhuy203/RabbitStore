@@ -14,11 +14,11 @@ const CollectionPage = () => {
   const { products, loading, error } = useSelector((state) => state.products);
 
   const sidebarRef = useRef(null);
-  const filterButtonRef = useRef(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   useEffect(() => {
     const queryParams = Object.fromEntries([...searchParams]);
+
     dispatch(fetchProductsByFilters({ collection, ...queryParams }));
   }, [dispatch, collection, searchParams]);
 
@@ -27,17 +27,13 @@ const CollectionPage = () => {
   };
 
   const handleClickOutside = (e) => {
-    if (
-      sidebarRef.current &&
-      !sidebarRef.current.contains(e.target) &&
-      filterButtonRef.current &&
-      !filterButtonRef.current.contains(e.target)
-    ) {
+    if (sidebarRef.current && !sidebarRef.current.contains(e.target)) {
       setIsSidebarOpen(false);
     }
   };
 
   useEffect(() => {
+    //add event listener for clicks
     document.addEventListener("mousedown", handleClickOutside);
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
@@ -45,36 +41,34 @@ const CollectionPage = () => {
   }, []);
 
   return (
-    <div className="flex min-h-screen bg-gray-100 overflow-y-auto">
-      {/* Mobile filter button */}
+    <div className="flex flex-col lg:flex-row">
+      {/* mobile filter button */}
       <button
-        ref={filterButtonRef}
         onClick={toggleSidebar}
-        className="lg:hidden fixed top-4 left-4 z-50 border p-2 flex justify-center items-center bg-white shadow-md rounded-md"
+        className="lg:hidden border p-2 flex justify-center items-center"
       >
-        <FaFilter className="mr-2" /> Bộ lọc
+        <FaFilter className="mr-2 " /> Bộ lọc
       </button>
 
-      {/* Filter sidebar */}
+      {/* filter sidebar */}
       <div
         ref={sidebarRef}
         className={`${
           isSidebarOpen ? "translate-x-0" : "-translate-x-full"
-        } fixed inset-y-0 left-0 z-40 w-64 min-w-[16rem] bg-white overflow-y-auto transition-transform duration-300 lg:sticky lg:top-0 lg:w-64 lg:min-w-[16rem] lg:h-screen lg:translate-x-0`}
+        } fixed inset-y-0 z-50 left-0 w-64 bg-white overflow-y-auto transition-transform duration-300 lg:static lg:translate-x-0`}
       >
         <FilterSidebar />
       </div>
-
-      {/* Main content */}
-      <div className="flex-1 p-4 lg:ml-64 max-w-full overflow-x-hidden">
-        <h2 className="text-2xl uppercase font-medium mb-4">
+      <div className="flex-grow p-4">
+        <h2 className="text-2 uppercase font-medium mb-4">
+          {" "}
           Tất cả bộ sưu tập
         </h2>
 
-        {/* Sort option */}
+        {/* sort option */}
         <SortOption />
 
-        {/* Product grid */}
+        {/* product grid */}
         <ProductGrid products={products} loading={loading} error={error} />
       </div>
     </div>

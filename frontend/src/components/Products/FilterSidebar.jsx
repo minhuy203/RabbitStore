@@ -103,12 +103,6 @@ const FilterSidebar = () => {
     updateURLParams(newFilters);
   };
 
-  const handleColorChange = (color) => {
-    const newFilters = { ...filters, color: filters.color === color ? "" : color };
-    setFilters(newFilters);
-    updateURLParams(newFilters);
-  };
-
   const updateURLParams = (newFilters) => {
     const params = new URLSearchParams();
     Object.keys(newFilters).forEach((key) => {
@@ -126,12 +120,12 @@ const FilterSidebar = () => {
     const newPrice = e.target.value;
     setPriceRange([0, newPrice]);
     const newFilters = { ...filters, minPrice: 0, maxPrice: newPrice };
-    setFilters(newFilters);
+    setFilters(newFilters); // Sửa lỗi ở đây: cập nhật filters đúng cách
     updateURLParams(newFilters);
   };
 
   return (
-    <div className="p-4 w-full h-full bg-white min-h-screen">
+    <div className="p-4">
       <h3 className="text-xl font-medium text-gray-800 mb-4">Bộ lọc</h3>
       {/* category */}
       <div className="mb-6">
@@ -178,12 +172,14 @@ const FilterSidebar = () => {
       {/* color */}
       <div className="mb-6">
         <label className="block text-gray-600 font-medium mb-2">Màu</label>
-        <div className="grid grid-cols-3 gap-2">
+        <div className="flex flex-wrap gap-2">
           {colors.map((color) => (
             <button
               key={color}
-              onClick={() => handleColorChange(color)}
-              className={`w-7 h-7 rounded-full border border-gray-300 cursor-pointer transition hover:scale-105 ${
+              name="color"
+              value={color}
+              onClick={handleFilterChange}
+              className={`w-8 h-8 rounded-full border border-gray-300 cursor-pointer transition hover:scale-105 ${
                 filters.color === color ? "ring-2 ring-blue-500" : ""
               }`}
               style={{ backgroundColor: colorMap[color] || "#CCCCCC" }}
