@@ -1,6 +1,5 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import axios from "axios";
-import { updateUser } from "./adminSlice";
 
 const userFromStorage = localStorage.getItem("userInfo")
   ? JSON.parse(localStorage.getItem("userInfo"))
@@ -55,6 +54,29 @@ export const registerUser = createAsyncThunk(
   }
 );
 
+export const updateProfile = createAsyncThunk(
+  "auth/updateProfile",
+  async ({ name, email, password }, { rejectWithValue }) => {
+    try {
+      const response = await axios.put(
+        `${import.meta.env.VITE_BACKEND_URL}/api/users/profile`,
+        { name, email, password },
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("userToken")}`,
+          },
+        }
+      );
+      localStorage.setItem("userInfo", JSON.stringify(response.data.user));
+      return response.data.user;
+    } catch (error) {
+      return rejectWithValue(
+        error.response?.data?.message || "Cập nhật thất bại"
+      );
+    }
+  }
+);
+
 const authSlice = createSlice({
   name: "auth",
   initialState,
@@ -102,16 +124,18 @@ const authSlice = createSlice({
         state.loading = false;
         state.error = action.payload;
       })
-      .addCase(updateUser.fulfilled, (state, action) => {
-        if (state.user && state.user._id === action.payload.user._id) {
-          state.user = action.payload.user;
-        }
-        state.loading = false;
+      .addCase(updateProfile.pending, (state) => {
+        state.loading = true;
         state.error = null;
       })
-      .addCase(updateUser.rejected, (state, action) => {
+      .addCase(updateProfile.fulfilled, (state, action) => {
         state.loading = false;
-        state.error = action.payload.message || "Cập nhật thất bại";
+        state.user = action.payload;
+        state.error = null;
+      })
+      .addCase(updateProfile.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
       });
   },
 });

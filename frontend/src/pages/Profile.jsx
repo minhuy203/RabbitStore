@@ -1,23 +1,26 @@
 import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
-import { logout, clearError } from "../redux/slices/authSlice";
+import { logout, clearError, updateProfile } from "../redux/slices/authSlice";
 import { clearCart } from "../redux/slices/cartSlice";
-import { updateUser } from "../redux/slices/adminSlice";
+import axios from "axios";
 import MyOrderPage from "./MyOrderPage";
 
 const Profile = () => {
   const { user, error: authError } = useSelector((state) => state.auth);
-  const { error: adminError } = useSelector((state) => state.admin);
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
     name: user?.name || "",
-    password: "",
+    oldPassword: "",
+    newPassword: "",
+    confirmPassword: "",
   });
   const [nameError, setNameError] = useState("");
-  const [passwordError, setPasswordError] = useState("");
+  const [oldPasswordError, setOldPasswordError] = useState("");
+  const [newPasswordError, setNewPasswordError] = useState("");
+  const [confirmPasswordError, setConfirmPasswordError] = useState("");
   const [message, setMessage] = useState("");
 
   useEffect(() => {
@@ -26,13 +29,15 @@ const Profile = () => {
     } else {
       setFormData({
         name: user.name,
-        password: "",
+        oldPassword: "",
+        newPassword: "",
+        confirmPassword: "",
       });
     }
   }, [user, navigate]);
 
   const validateName = (name) => {
-    const nameRegex = /^[a-zA-Z\s]+$/; // Chỉ chứa chữ cái và khoảng trắng
+    const nameRegex = /^[a-zA-Z\s]+$/;
     if (!name) {
       return "Tên không được để trống!";
     }
@@ -42,18 +47,44 @@ const Profile = () => {
     return "";
   };
 
-  const validatePassword = (password) => {
-    if (!password) {
-      return ""; // Mật khẩu là tùy chọn
-    }
-    if (password.length < 6) {
-      return "Mật khẩu phải có ít nhất 6 ký tự!";
-    }
-    const passwordRegex = /^[a-zA-Z0-9]+$/; // Chỉ chứa chữ cái và số
-    if (!passwordRegex.test(password)) {
-      return "Mật khẩu chỉ được chứa chữ cái và số!";
+  const validateNewPassword = (password) => {
+    if (password) {
+      if (password.length < 6) {
+        return "Mật khẩu mới phải có ít nhất 6 ký tự!";
+      }
+      const passwordRegex = /^[a-zA-Z0-9]+$/;
+      if (!passwordRegex.test(password)) {
+        return "Mật khẩu mới chỉ được chứa chữ cái và số!";
+      }
     }
     return "";
+  };
+
+  const validateConfirmPassword = (newPassword, confirmPassword) => {
+    if (newPassword && !confirmPassword) {
+      return "Xác nhận mật khẩu không được để trống!";
+    }
+    if (newPassword !== confirmPassword) {
+      return "Mật khẩu xác nhận không khớp!";
+    }
+    return "";
+  };
+
+  const verifyOldPassword = async (email, oldPassword) => {
+    try {
+      const response = await axios.post(
+        `${import.meta.env.VITE_BACKEND_URL}/api/users/verify-password`,
+        { email, password: oldPassword },
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("userToken")}`,
+          },
+        }
+      );
+      return response.data.valid;
+    } catch (error) {
+      return false;
+    }
   };
 
   const handleChange = (e) => {
@@ -65,43 +96,79 @@ const Profile = () => {
 
     if (name === "name") {
       setNameError(validateName(value));
-    } else if (name === "password") {
-      setPasswordError(validatePassword(value));
+    } else if (name === "oldPassword") {
+      setOldPasswordError("");
+    } else if (name === "newPassword") {
+      setNewPasswordError(validateNewPassword(value));
+      setConfirmPasswordError(
+        validateConfirmPassword(value, formData.confirmPassword)
+      );
+    } else if (name === "confirmPassword") {
+      setConfirmPasswordError(
+        validateConfirmPassword(formData.newPassword, value)
+      );
     }
     dispatch(clearError());
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setMessage("");
 
     const nameValidationError = validateName(formData.name);
-    const passwordValidationError = validatePassword(formData.password);
+    const newPasswordValidationError = validateNewPassword(
+      formData.newPassword
+    );
+    const confirmPasswordValidationError = validateConfirmPassword(
+      formData.newPassword,
+      formData.confirmPassword
+    );
 
-    if (nameValidationError || passwordValidationError) {
+    if (
+      nameValidationError ||
+      newPasswordValidationError ||
+      confirmPasswordValidationError
+    ) {
       setNameError(nameValidationError);
-      setPasswordError(passwordValidationError);
+      setNewPasswordError(newPasswordValidationError);
+      setConfirmPasswordError(confirmPasswordValidationError);
       return;
     }
 
-    dispatch(
-      updateUser({
-        id: user._id,
-        name: formData.name,
-        email: user.email,
-        password: formData.password || undefined,
-        role: user.role,
-      })
-    ).then((action) => {
+    // Chỉ kiểm tra mật khẩu cũ nếu người dùng muốn thay đổi mật khẩu
+    if (formData.newPassword) {
+      const isOldPasswordValid = await verifyOldPassword(
+        user.email,
+        formData.oldPassword
+      );
+      if (!isOldPasswordValid) {
+        setOldPasswordError("Mật khẩu cũ không đúng!");
+        return;
+      }
+    }
+
+    // Chuẩn bị dữ liệu để gửi
+    const updateData = {
+      name: formData.name,
+      email: user.email,
+    };
+    if (formData.newPassword) {
+      updateData.password = formData.newPassword;
+    }
+
+    dispatch(updateProfile(updateData)).then((action) => {
       if (action.meta.requestStatus === "fulfilled") {
         setMessage("Cập nhật thông tin thành công!");
-        setFormData((prev) => ({ ...prev, password: "" }));
-        localStorage.setItem(
-          "userInfo",
-          JSON.stringify({ ...user, name: formData.name })
-        );
+        setFormData({
+          name: action.payload.name,
+          oldPassword: "",
+          newPassword: "",
+          confirmPassword: "",
+        });
       } else {
-        setMessage("Cập nhật thất bại. Vui lòng thử lại.");
+        setMessage(
+          action.payload?.message || "Cập nhật thất bại. Vui lòng thử lại."
+        );
       }
     });
   };
@@ -138,19 +205,49 @@ const Profile = () => {
                 )}
               </div>
               <div>
+                <label className="block text-gray-700">Mật khẩu cũ</label>
+                <input
+                  type="password"
+                  name="oldPassword"
+                  value={formData.oldPassword}
+                  onChange={handleChange}
+                  className="w-full p-2 border rounded"
+                  placeholder="Nhập mật khẩu cũ"
+                  required={formData.newPassword !== ""} // Chỉ bắt buộc khi có mật khẩu mới
+                />
+                {oldPasswordError && (
+                  <p className="text-red-500 text-sm">{oldPasswordError}</p>
+                )}
+              </div>
+              <div>
+                <label className="block text-gray-700">Mật khẩu mới</label>
+                <input
+                  type="password"
+                  name="newPassword"
+                  value={formData.newPassword}
+                  onChange={handleChange}
+                  className="w-full p-2 border rounded"
+                  placeholder="Nhập mật khẩu mới"
+                />
+                {newPasswordError && (
+                  <p className="text-red-500 text-sm">{newPasswordError}</p>
+                )}
+              </div>
+              <div>
                 <label className="block text-gray-700">
-                  Mật khẩu mới (tùy chọn)
+                  Xác nhận mật khẩu mới
                 </label>
                 <input
                   type="password"
-                  name="password"
-                  value={formData.password}
+                  name="confirmPassword"
+                  value={formData.confirmPassword}
                   onChange={handleChange}
                   className="w-full p-2 border rounded"
-                  placeholder="Nhập mật khẩu mới nếu muốn thay đổi"
+                  placeholder="Xác nhận mật khẩu mới"
+                  required={formData.newPassword !== ""} // Chỉ bắt buộc khi có mật khẩu mới
                 />
-                {passwordError && (
-                  <p className="text-red-500 text-sm">{passwordError}</p>
+                {confirmPasswordError && (
+                  <p className="text-red-500 text-sm">{confirmPasswordError}</p>
                 )}
               </div>
               {message && (
@@ -166,9 +263,6 @@ const Profile = () => {
               )}
               {authError && (
                 <p className="text-red-500 text-sm">Lỗi: {authError}</p>
-              )}
-              {adminError && (
-                <p className="text-red-500 text-sm">Lỗi: {adminError}</p>
               )}
               <button
                 type="submit"

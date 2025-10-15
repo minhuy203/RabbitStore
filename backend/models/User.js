@@ -18,8 +18,14 @@ const userSchema = new mongoose.Schema(
     password: {
       type: String,
       required: true,
-      minlength: [6, "Mật khẩu phải có ít nhất 6 ký tự!"], // Cập nhật thông báo
-      match: [/^[a-zA-Z0-9]+$/, "Mật khẩu chỉ được chứa chữ cái và số!"],
+      minlength: [6, "Mật khẩu phải có ít nhất 6 ký tự!"],
+      validate: {
+        validator: function (value) {
+          // Chỉ xác thực regex khi mật khẩu được sửa đổi
+          return this.isModified("password") ? /^[a-zA-Z0-9]+$/.test(value) : true;
+        },
+        message: "Mật khẩu chỉ được chứa chữ cái và số!",
+      },
     },
     role: {
       type: String,
