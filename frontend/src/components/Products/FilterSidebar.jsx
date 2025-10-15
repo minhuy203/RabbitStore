@@ -103,6 +103,15 @@ const FilterSidebar = () => {
     updateURLParams(newFilters);
   };
 
+  const handleColorChange = (color) => {
+    const newFilters = {
+      ...filters,
+      color: filters.color === color ? "" : color,
+    };
+    setFilters(newFilters);
+    updateURLParams(newFilters);
+  };
+
   const updateURLParams = (newFilters) => {
     const params = new URLSearchParams();
     Object.keys(newFilters).forEach((key) => {
@@ -120,7 +129,7 @@ const FilterSidebar = () => {
     const newPrice = e.target.value;
     setPriceRange([0, newPrice]);
     const newFilters = { ...filters, minPrice: 0, maxPrice: newPrice };
-    setFilters(newFilters); // Sửa lỗi ở đây: cập nhật filters đúng cách
+    setFilters(newFilters);
     updateURLParams(newFilters);
   };
 
@@ -176,9 +185,7 @@ const FilterSidebar = () => {
           {colors.map((color) => (
             <button
               key={color}
-              name="color"
-              value={color}
-              onClick={handleFilterChange}
+              onClick={() => handleColorChange(color)}
               className={`w-8 h-8 rounded-full border border-gray-300 cursor-pointer transition hover:scale-105 ${
                 filters.color === color ? "ring-2 ring-blue-500" : ""
               }`}
