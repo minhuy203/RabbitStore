@@ -22,6 +22,7 @@ const Profile = () => {
   const [newPasswordError, setNewPasswordError] = useState("");
   const [confirmPasswordError, setConfirmPasswordError] = useState("");
   const [message, setMessage] = useState("");
+  const [isEditing, setIsEditing] = useState(false); // State to toggle form visibility
 
   useEffect(() => {
     if (!user) {
@@ -135,7 +136,6 @@ const Profile = () => {
       return;
     }
 
-    // Chỉ kiểm tra mật khẩu cũ nếu người dùng muốn thay đổi mật khẩu
     if (formData.newPassword) {
       const isOldPasswordValid = await verifyOldPassword(
         user.email,
@@ -147,7 +147,6 @@ const Profile = () => {
       }
     }
 
-    // Chuẩn bị dữ liệu để gửi
     const updateData = {
       name: formData.name,
       email: user.email,
@@ -165,6 +164,7 @@ const Profile = () => {
           newPassword: "",
           confirmPassword: "",
         });
+        setIsEditing(false); // Hide form after successful update
       } else {
         setMessage(
           action.payload?.message || "Cập nhật thất bại. Vui lòng thử lại."
@@ -179,6 +179,17 @@ const Profile = () => {
     navigate("/login");
   };
 
+  const toggleEditForm = () => {
+    setIsEditing(!isEditing);
+    // Reset errors and message when toggling
+    setNameError("");
+    setOldPasswordError("");
+    setNewPasswordError("");
+    setConfirmPasswordError("");
+    setMessage("");
+    dispatch(clearError());
+  };
+
   return (
     <div className="min-h-screen flex flex-col">
       <div className="flex-grow container mx-auto p-4 md:p-6 max-w-[1800px]">
@@ -188,89 +199,106 @@ const Profile = () => {
               {user?.name}
             </h1>
             <p className="text-lg text-gray-600 mb-4">{user?.email}</p>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label className="block text-gray-700">Tên đầy đủ</label>
-                <input
-                  type="text"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleChange}
-                  className="w-full p-2 border rounded"
-                  placeholder="Nhập tên đầy đủ"
-                  required
-                />
-                {nameError && (
-                  <p className="text-red-500 text-sm">{nameError}</p>
-                )}
-              </div>
-              <div>
-                <label className="block text-gray-700">Mật khẩu cũ</label>
-                <input
-                  type="password"
-                  name="oldPassword"
-                  value={formData.oldPassword}
-                  onChange={handleChange}
-                  className="w-full p-2 border rounded"
-                  placeholder="Nhập mật khẩu cũ"
-                  required={formData.newPassword !== ""} // Chỉ bắt buộc khi có mật khẩu mới
-                />
-                {oldPasswordError && (
-                  <p className="text-red-500 text-sm">{oldPasswordError}</p>
-                )}
-              </div>
-              <div>
-                <label className="block text-gray-700">Mật khẩu mới</label>
-                <input
-                  type="password"
-                  name="newPassword"
-                  value={formData.newPassword}
-                  onChange={handleChange}
-                  className="w-full p-2 border rounded"
-                  placeholder="Nhập mật khẩu mới"
-                />
-                {newPasswordError && (
-                  <p className="text-red-500 text-sm">{newPasswordError}</p>
-                )}
-              </div>
-              <div>
-                <label className="block text-gray-700">
-                  Xác nhận mật khẩu mới
-                </label>
-                <input
-                  type="password"
-                  name="confirmPassword"
-                  value={formData.confirmPassword}
-                  onChange={handleChange}
-                  className="w-full p-2 border rounded"
-                  placeholder="Xác nhận mật khẩu mới"
-                  required={formData.newPassword !== ""} // Chỉ bắt buộc khi có mật khẩu mới
-                />
-                {confirmPasswordError && (
-                  <p className="text-red-500 text-sm">{confirmPasswordError}</p>
-                )}
-              </div>
-              {message && (
-                <p
-                  className={`text-sm ${
-                    message.includes("thành công")
-                      ? "text-green-500"
-                      : "text-red-500"
-                  }`}
-                >
-                  {message}
-                </p>
-              )}
-              {authError && (
-                <p className="text-red-500 text-sm">Lỗi: {authError}</p>
-              )}
+            {!isEditing ? (
               <button
-                type="submit"
-                className="w-full bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600"
+                onClick={toggleEditForm}
+                className="w-full bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600 mb-4"
               >
                 Cập nhật thông tin
               </button>
-            </form>
+            ) : (
+              <>
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  <div>
+                    <label className="block text-gray-700">Tên đầy đủ</label>
+                    <input
+                      type="text"
+                      name="name"
+                      value={formData.name}
+                      onChange={handleChange}
+                      className="w-full p-2 border rounded"
+                      placeholder="Nhập tên đầy đủ"
+                      required
+                    />
+                    {nameError && (
+                      <p className="text-red-500 text-sm">{nameError}</p>
+                    )}
+                  </div>
+                  <div>
+                    <label className="block text-gray-700">Mật khẩu cũ</label>
+                    <input
+                      type="password"
+                      name="oldPassword"
+                      value={formData.oldPassword}
+                      onChange={handleChange}
+                      className="w-full p-2 border rounded"
+                      placeholder="Nhập mật khẩu cũ"
+                      required={formData.newPassword !== ""}
+                    />
+                    {oldPasswordError && (
+                      <p className="text-red-500 text-sm">{oldPasswordError}</p>
+                    )}
+                  </div>
+                  <div>
+                    <label className="block text-gray-700">Mật khẩu mới</label>
+                    <input
+                      type="password"
+                      name="newPassword"
+                      value={formData.newPassword}
+                      onChange={handleChange}
+                      className="w-full p-2 border rounded"
+                      placeholder="Nhập mật khẩu mới"
+                    />
+                    {newPasswordError && (
+                      <p className="text-red-500 text-sm">{newPasswordError}</p>
+                    )}
+                  </div>
+                  <div>
+                    <label className="block text-gray-700">
+                      Xác nhận mật khẩu mới
+                    </label>
+                    <input
+                      type="password"
+                      name="confirmPassword"
+                      value={formData.confirmPassword}
+                      onChange={handleChange}
+                      className="w-full p-2 border rounded"
+                      placeholder="Xác nhận mật khẩu mới"
+                      required={formData.newPassword !== ""}
+                    />
+                    {confirmPasswordError && (
+                      <p className="text-red-500 text-sm">{confirmPasswordError}</p>
+                    )}
+                  </div>
+                  {message && (
+                    <p
+                      className={`text-sm ${
+                        message.includes("thành công")
+                          ? "text-green-500"
+                          : "text-red-500"
+                      }`}
+                    >
+                      {message}
+                    </p>
+                  )}
+                  {authError && (
+                    <p className="text-red-500 text-sm">Lỗi: {authError}</p>
+                  )}
+                  <button
+                    type="submit"
+                    className="w-full bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600"
+                  >
+                    Cập nhật thông tin
+                  </button>
+                </form>
+                <button
+                  onClick={toggleEditForm}
+                  className="w-full bg-gray-500 text-white py-2 px-4 rounded hover:bg-gray-600 mt-4"
+                >
+                  Hủy
+                </button>
+              </>
+            )}
             <button
               onClick={handleLogout}
               className="w-full bg-red-500 text-white py-2 px-4 rounded hover:bg-red-600 mt-4"
