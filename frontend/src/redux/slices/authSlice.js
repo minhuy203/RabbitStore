@@ -1,5 +1,6 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import axios from "axios";
+import { updateUser } from "./adminSlice";
 
 const userFromStorage = localStorage.getItem("userInfo")
   ? JSON.parse(localStorage.getItem("userInfo"))
@@ -100,6 +101,17 @@ const authSlice = createSlice({
       .addCase(registerUser.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
+      })
+      .addCase(updateUser.fulfilled, (state, action) => {
+        if (state.user && state.user._id === action.payload.user._id) {
+          state.user = action.payload.user;
+        }
+        state.loading = false;
+        state.error = null;
+      })
+      .addCase(updateUser.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload.message || "Cập nhật thất bại";
       });
   },
 });

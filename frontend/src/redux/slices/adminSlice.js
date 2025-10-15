@@ -1,11 +1,9 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import axios from "axios";
-import { RiLoopLeftFill } from "react-icons/ri";
 
 export const fetchUsers = createAsyncThunk("admin/fetchUsers", async () => {
   const response = await axios.get(
     `${import.meta.env.VITE_BACKEND_URL}/api/admin/users`,
-
     {
       headers: {
         Authorization: `Bearer ${localStorage.getItem("userToken")}`,
@@ -30,24 +28,28 @@ export const addUser = createAsyncThunk(
       );
       return response.data;
     } catch (error) {
-      return rejectWithValue(error.response.data);
+      return rejectWithValue(error.response?.data || { message: "Lỗi server" });
     }
   }
 );
 
 export const updateUser = createAsyncThunk(
   "admin/updateUser",
-  async ({ id, name, email, role }) => {
-    const response = await axios.put(
-      `${import.meta.env.VITE_BACKEND_URL}/api/admin/users/${id}`,
-      { name, email, role },
-      {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("userToken")}`,
-        },
-      }
-    );
-    return response.data;
+  async ({ id, name, email, password, role }, { rejectWithValue }) => {
+    try {
+      const response = await axios.put(
+        `${import.meta.env.VITE_BACKEND_URL}/api/admin/users/${id}`,
+        { name, email, password, role },
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("userToken")}`,
+          },
+        }
+      );
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data || { message: "Lỗi server" });
+    }
   }
 );
 
@@ -84,17 +86,27 @@ const adminSlice = createSlice({
         state.loading = false;
         state.error = action.error.message;
       })
+      .addCase(updateUser.pending, (state) => {
+        state.loading = true;
+      })
       .addCase(updateUser.fulfilled, (state, action) => {
-        const updateUser = action.payload;
+        const updatedUser = action.payload.user;
         const userIndex = state.users.findIndex(
-          (user) => user._id === updateUser._id
+          (user) => user._id === updatedUser._id
         );
         if (userIndex !== -1) {
-          state.users[userIndex] = updateUser;
+          state.users[userIndex] = updatedUser;
         }
+        state.loading = false;
+        state.error = null;
+      })
+      .addCase(updateUser.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload.message || "Cập nhật thất bại";
       })
       .addCase(deleteUser.fulfilled, (state, action) => {
         state.users = state.users.filter((user) => user._id !== action.payload);
+        state.loading = false;
       })
       .addCase(addUser.pending, (state) => {
         state.loading = true;
