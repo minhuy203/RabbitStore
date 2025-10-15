@@ -33,7 +33,7 @@ const Register = () => {
   }, [user, guestId, cart, navigate, isCheckoutRedirect, dispatch]);
 
   const validateName = (name) => {
-    const nameRegex = /^[a-zA-Z\s]+$/; // Chỉ chứa chữ cái và khoảng trắng
+    const nameRegex = /^[\p{L}\s]+$/u; // Chỉ chứa chữ cái và khoảng trắng
     if (!name) {
       return "Tên không được để trống!";
     }

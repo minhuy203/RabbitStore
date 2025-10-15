@@ -22,7 +22,7 @@ router.get("/", protect, admin, async (req, res) => {
 router.post("/", protect, admin, async (req, res) => {
   const { name, email, password, role } = req.body;
   try {
-    const nameRegex = /^[a-zA-Z\s]+$/;
+    const nameRegex = /^[\p{L}\s]+$/u;
     if (!nameRegex.test(name)) {
       return res
         .status(400)
@@ -54,7 +54,7 @@ router.put("/:id", protect, admin, async (req, res) => {
     if (!user) {
       return res.status(404).json({ message: "Không tìm thấy người dùng" });
     }
-    const nameRegex = /^[a-zA-Z\s]+$/;
+    const nameRegex = /^[\p{L}\s]+$/u;
     if (req.body.name && !nameRegex.test(req.body.name)) {
       return res
         .status(400)

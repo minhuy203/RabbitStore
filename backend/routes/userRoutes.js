@@ -179,7 +179,7 @@ router.put("/profile", protect, async (req, res) => {
 
     // Validate name if provided
     if (req.body.name) {
-      const nameRegex = /^[a-zA-Z\s]+$/;
+      const nameRegex = /^[\p{L}\s]+$/u;
       if (!nameRegex.test(req.body.name)) {
         return res
           .status(400)

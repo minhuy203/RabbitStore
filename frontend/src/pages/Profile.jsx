@@ -37,7 +37,7 @@ const Profile = () => {
   }, [user, navigate]);
 
   const validateName = (name) => {
-    const nameRegex = /^[a-zA-Z\s]+$/;
+    const nameRegex = /^[\p{L}\s]+$/u;
     if (!name) {
       return "Tên không được để trống!";
     }
