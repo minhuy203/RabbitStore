@@ -104,10 +104,7 @@ const FilterSidebar = () => {
   };
 
   const handleColorChange = (color) => {
-    const newFilters = {
-      ...filters,
-      color: filters.color === color ? "" : color,
-    };
+    const newFilters = { ...filters, color: filters.color === color ? "" : color };
     setFilters(newFilters);
     updateURLParams(newFilters);
   };
@@ -134,7 +131,7 @@ const FilterSidebar = () => {
   };
 
   return (
-    <div className="p-4">
+    <div className="p-4 w-full h-full bg-white">
       <h3 className="text-xl font-medium text-gray-800 mb-4">Bộ lọc</h3>
       {/* category */}
       <div className="mb-6">
@@ -186,7 +183,7 @@ const FilterSidebar = () => {
             <button
               key={color}
               onClick={() => handleColorChange(color)}
-              className={`w-8 h-8 rounded-full border border-gray-300 cursor-pointer transition hover:scale-105 ${
+              className={`w-7 h-7 rounded-full border border-gray-300 cursor-pointer transition hover:scale-105 ${
                 filters.color === color ? "ring-2 ring-blue-500" : ""
               }`}
               style={{ backgroundColor: colorMap[color] || "#CCCCCC" }}
