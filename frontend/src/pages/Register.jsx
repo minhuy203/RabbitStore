@@ -9,6 +9,7 @@ const Register = () => {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [nameError, setNameError] = useState("");
   const [passwordError, setPasswordError] = useState("");
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -31,6 +32,17 @@ const Register = () => {
     }
   }, [user, guestId, cart, navigate, isCheckoutRedirect, dispatch]);
 
+  const validateName = (name) => {
+    const nameRegex = /^[a-zA-Z\s]+$/; // Chỉ chứa chữ cái và khoảng trắng
+    if (!name) {
+      return "Tên không được để trống!";
+    }
+    if (!nameRegex.test(name)) {
+      return "Tên chỉ được chứa chữ cái và khoảng trắng!";
+    }
+    return "";
+  };
+
   const validatePassword = (password) => {
     if (password.length < 6) {
       return "Mật khẩu phải có ít nhất 6 ký tự!";
@@ -42,10 +54,26 @@ const Register = () => {
     return "";
   };
 
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    if (name === "name") {
+      setName(value);
+      setNameError(validateName(value));
+    } else if (name === "email") {
+      setEmail(value);
+    } else if (name === "password") {
+      setPassword(value);
+      setPasswordError(validatePassword(value));
+    }
+    dispatch(clearError());
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
+    const nameValidationError = validateName(name);
     const passwordValidationError = validatePassword(password);
-    if (passwordValidationError) {
+    if (nameValidationError || passwordValidationError) {
+      setNameError(nameValidationError);
       setPasswordError(passwordValidationError);
       return;
     }
@@ -67,33 +95,27 @@ const Register = () => {
             Hãy điền họ tên, email và mật khẩu để đăng ký.
           </p>
           {error && <p className="text-red-500 text-center mb-4">{error}</p>}
-          {passwordError && (
-            <p className="text-red-500 text-center mb-4">{passwordError}</p>
-          )}
           <div className="mb-4">
             <label className="block text-sm font-semibold mb-2">
               Họ và tên
             </label>
             <input
               type="text"
+              name="name"
               value={name}
-              onChange={(e) => {
-                setName(e.target.value);
-                dispatch(clearError());
-              }}
+              onChange={handleChange}
               className="w-full p-2 border rounded"
               placeholder="Nhập tên đầy đủ của bạn"
             />
+            {nameError && <p className="text-red-500 text-sm">{nameError}</p>}
           </div>
           <div className="mb-4">
             <label className="block text-sm font-semibold mb-2">Email</label>
             <input
               type="email"
+              name="email"
               value={email}
-              onChange={(e) => {
-                setEmail(e.target.value);
-                dispatch(clearError());
-              }}
+              onChange={handleChange}
               className="w-full p-2 border rounded"
               placeholder="Nhập địa chỉ email"
             />
@@ -102,15 +124,15 @@ const Register = () => {
             <label className="block text-sm font-semibold mb-2">Mật khẩu</label>
             <input
               type="password"
+              name="password"
               value={password}
-              onChange={(e) => {
-                setPassword(e.target.value);
-                setPasswordError(validatePassword(e.target.value));
-                dispatch(clearError());
-              }}
+              onChange={handleChange}
               className="w-full p-2 border rounded"
               placeholder="Nhập mật khẩu của bạn"
             />
+            {passwordError && (
+              <p className="text-red-500 text-sm">{passwordError}</p>
+            )}
           </div>
           <button
             type="submit"
