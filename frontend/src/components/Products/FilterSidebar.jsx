@@ -7,7 +7,7 @@ const FilterSidebar = () => {
   const [filters, setFilters] = useState({
     category: "",
     gender: "",
-    color: "",
+    color: [],
     size: [],
     material: [],
     brand: [],
@@ -75,7 +75,7 @@ const FilterSidebar = () => {
     setFilters({
       category: params.category || "",
       gender: params.gender || "",
-      color: params.color || "",
+      color: params.color ? params.color.split(",") : [],
       size: params.size ? params.size.split(",") : [],
       material: params.material ? params.material.split(",") : [],
       brand: params.brand ? params.brand.split(",") : [],
@@ -108,7 +108,7 @@ const FilterSidebar = () => {
     Object.keys(newFilters).forEach((key) => {
       if (Array.isArray(newFilters[key]) && newFilters[key].length > 0) {
         params.append(key, newFilters[key].join(","));
-      } else if (newFilters[key]) {
+      } else if (newFilters[key] && !Array.isArray(newFilters[key])) {
         params.append(key, newFilters[key]);
       }
     });
@@ -120,7 +120,7 @@ const FilterSidebar = () => {
     const newPrice = e.target.value;
     setPriceRange([0, newPrice]);
     const newFilters = { ...filters, minPrice: 0, maxPrice: newPrice };
-    setFilters(newFilters); // Sửa lỗi ở đây: cập nhật filters đúng cách
+    setFilters(newFilters);
     updateURLParams(newFilters);
   };
 
@@ -174,17 +174,21 @@ const FilterSidebar = () => {
         <label className="block text-gray-600 font-medium mb-2">Màu</label>
         <div className="flex flex-wrap gap-2">
           {colors.map((color) => (
-            <button
-              key={color}
-              name="color"
-              value={color}
-              onClick={handleFilterChange}
-              className={`w-8 h-8 rounded-full border border-gray-300 cursor-pointer transition hover:scale-105 ${
-                filters.color === color ? "ring-2 ring-blue-500" : ""
-              }`}
-              style={{ backgroundColor: colorMap[color] || "#CCCCCC" }}
-              title={color}
-            ></button>
+            <div key={color} className="flex items-center mb-1">
+              <input
+                type="checkbox"
+                name="color"
+                value={color}
+                checked={filters.color.includes(color)}
+                onChange={handleFilterChange}
+                className="mr-2 h-4 w-4 text-blue-500 focus:ring-blue-400 border-gray-300"
+              />
+              <span
+                className="w-6 h-6 rounded-full border border-gray-300 inline-block mr-2"
+                style={{ backgroundColor: colorMap[color] || "#CCCCCC" }}
+              ></span>
+              <span className="text-gray-700">{color}</span>
+            </div>
           ))}
         </div>
       </div>
