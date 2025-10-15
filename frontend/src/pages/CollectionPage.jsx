@@ -14,6 +14,7 @@ const CollectionPage = () => {
   const { products, loading, error } = useSelector((state) => state.products);
 
   const sidebarRef = useRef(null);
+  const filterButtonRef = useRef(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   useEffect(() => {
@@ -26,7 +27,12 @@ const CollectionPage = () => {
   };
 
   const handleClickOutside = (e) => {
-    if (sidebarRef.current && !sidebarRef.current.contains(e.target)) {
+    if (
+      sidebarRef.current &&
+      !sidebarRef.current.contains(e.target) &&
+      filterButtonRef.current &&
+      !filterButtonRef.current.contains(e.target)
+    ) {
       setIsSidebarOpen(false);
     }
   };
@@ -39,9 +45,10 @@ const CollectionPage = () => {
   }, []);
 
   return (
-    <div className="flex min-h-screen bg-gray-100">
+    <div className="flex min-h-screen bg-gray-100 overflow-y-auto">
       {/* Mobile filter button */}
       <button
+        ref={filterButtonRef}
         onClick={toggleSidebar}
         className="lg:hidden fixed top-4 left-4 z-50 border p-2 flex justify-center items-center bg-white shadow-md rounded-md"
       >
@@ -53,7 +60,7 @@ const CollectionPage = () => {
         ref={sidebarRef}
         className={`${
           isSidebarOpen ? "translate-x-0" : "-translate-x-full"
-        } fixed inset-y-0 left-0 z-40 w-64 min-w-[16rem] bg-white overflow-y-auto transition-transform duration-300 lg:sticky lg:top-0 lg:w-64 lg:min-w-[16rem] lg:h-screen`}
+        } fixed inset-y-0 left-0 z-40 w-64 min-w-[16rem] bg-white overflow-y-auto transition-transform duration-300 lg:sticky lg:top-0 lg:w-64 lg:min-w-[16rem] lg:h-screen lg:translate-x-0`}
       >
         <FilterSidebar />
       </div>

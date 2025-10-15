@@ -104,10 +104,7 @@ const FilterSidebar = () => {
   };
 
   const handleColorChange = (color) => {
-    const newFilters = {
-      ...filters,
-      color: filters.color === color ? "" : color,
-    };
+    const newFilters = { ...filters, color: filters.color === color ? "" : color };
     setFilters(newFilters);
     updateURLParams(newFilters);
   };
@@ -134,7 +131,7 @@ const FilterSidebar = () => {
   };
 
   return (
-    <div className="p-4 w-full h-full bg-white">
+    <div className="p-4 w-full h-full bg-white min-h-screen">
       <h3 className="text-xl font-medium text-gray-800 mb-4">Bộ lọc</h3>
       {/* category */}
       <div className="mb-6">
