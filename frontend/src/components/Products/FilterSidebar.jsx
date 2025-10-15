@@ -7,7 +7,7 @@ const FilterSidebar = () => {
   const [filters, setFilters] = useState({
     category: "",
     gender: "",
-    color: [],
+    color: "",
     size: [],
     material: [],
     brand: [],
@@ -75,7 +75,7 @@ const FilterSidebar = () => {
     setFilters({
       category: params.category || "",
       gender: params.gender || "",
-      color: params.color ? params.color.split(",") : [],
+      color: params.color || "",
       size: params.size ? params.size.split(",") : [],
       material: params.material ? params.material.split(",") : [],
       brand: params.brand ? params.brand.split(",") : [],
@@ -108,7 +108,7 @@ const FilterSidebar = () => {
     Object.keys(newFilters).forEach((key) => {
       if (Array.isArray(newFilters[key]) && newFilters[key].length > 0) {
         params.append(key, newFilters[key].join(","));
-      } else if (newFilters[key] && !Array.isArray(newFilters[key])) {
+      } else if (newFilters[key]) {
         params.append(key, newFilters[key]);
       }
     });
@@ -120,7 +120,7 @@ const FilterSidebar = () => {
     const newPrice = e.target.value;
     setPriceRange([0, newPrice]);
     const newFilters = { ...filters, minPrice: 0, maxPrice: newPrice };
-    setFilters(newFilters);
+    setFilters(newFilters); // Sửa lỗi ở đây: cập nhật filters đúng cách
     updateURLParams(newFilters);
   };
 
@@ -174,44 +174,17 @@ const FilterSidebar = () => {
         <label className="block text-gray-600 font-medium mb-2">Màu</label>
         <div className="flex flex-wrap gap-2">
           {colors.map((color) => (
-            <div key={color} className="relative group">
-              <input
-                type="checkbox"
-                name="color"
-                value={color}
-                checked={filters.color.includes(color)}
-                onChange={handleFilterChange}
-                className="absolute opacity-0 h-0 w-0"
-              />
-              <label
-                className={`flex items-center justify-center w-8 h-8 rounded-full border-2 cursor-pointer transition-transform duration-200 hover:scale-105 ${
-                  filters.color.includes(color)
-                    ? "border-blue-500 ring-2 ring-blue-500"
-                    : "border-gray-300"
-                }`}
-                style={{ backgroundColor: colorMap[color] || "#CCCCCC" }}
-              >
-                {filters.color.includes(color) && (
-                  <svg
-                    className="w-4 h-4 text-white"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M5 13l4 4L19 7"
-                    />
-                  </svg>
-                )}
-              </label>
-              <span className="absolute bottom-10 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs rounded py-1 px-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                {color}
-              </span>
-            </div>
+            <button
+              key={color}
+              name="color"
+              value={color}
+              onClick={handleFilterChange}
+              className={`w-8 h-8 rounded-full border border-gray-300 cursor-pointer transition hover:scale-105 ${
+                filters.color === color ? "ring-2 ring-blue-500" : ""
+              }`}
+              style={{ backgroundColor: colorMap[color] || "#CCCCCC" }}
+              title={color}
+            ></button>
           ))}
         </div>
       </div>
