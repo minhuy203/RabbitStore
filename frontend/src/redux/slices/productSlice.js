@@ -18,17 +18,17 @@ export const fetchProductsByFilters = createAsyncThunk(
     limit,
   }) => {
     const query = new URLSearchParams();
-    if (collection) query.append("collection", collection);
-    if (size) query.append("size", size);
-    if (color) query.append("color", color);
+    if (collection && collection !== "all") query.append("collection", collection);
+    if (size) query.append("size", Array.isArray(size) ? size.join(",") : size);
+    if (color) query.append("color", Array.isArray(color) ? color.join(",") : color);
     if (gender) query.append("gender", gender);
     if (minPrice) query.append("minPrice", minPrice);
     if (maxPrice) query.append("maxPrice", maxPrice);
     if (sortBy) query.append("sortBy", sortBy);
     if (search) query.append("search", search);
-    if (category) query.append("category", category);
-    if (material) query.append("material", material);
-    if (brand) query.append("brand", brand);
+    if (category && category !== "all") query.append("category", category);
+    if (material) query.append("material", Array.isArray(material) ? material.join(",") : material);
+    if (brand) query.append("brand", Array.isArray(brand) ? brand.join(",") : brand);
     if (limit) query.append("limit", limit);
 
     const response = await axios.get(
@@ -106,15 +106,15 @@ const productsSlice = createSlice({
     error: null,
     filters: {
       category: "",
-      size: "",
-      color: "",
+      size: [],
+      color: [],
       gender: "",
-      brand: "",
-      minPrice: "",
-      maxPrice: "",
+      brand: [],
+      minPrice: 0,
+      maxPrice: 10000000,
       sortBy: "",
       search: "",
-      material: "",
+      material: [],
       collection: "",
     },
   },
@@ -125,15 +125,15 @@ const productsSlice = createSlice({
     clearFilter: (state) => {
       state.filters = {
         category: "",
-        size: "",
-        color: "",
+        size: [],
+        color: [],
         gender: "",
-        brand: "",
-        minPrice: "",
-        maxPrice: "",
+        brand: [],
+        minPrice: 0,
+        maxPrice: 10000000,
         sortBy: "",
         search: "",
-        material: "",
+        material: [],
         collection: "",
       };
     },
@@ -177,7 +177,7 @@ const productsSlice = createSlice({
         if (index !== -1) {
           state.products[index] = updatedProduct;
         }
-        state.selectedProduct = updatedProduct; // Cập nhật selectedProduct
+        state.selectedProduct = updatedProduct;
       })
       .addCase(updatedProduct.rejected, (state, action) => {
         state.loading = false;

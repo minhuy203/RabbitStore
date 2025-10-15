@@ -5,6 +5,12 @@ const Product = require("../models/Product");
 const router = express.Router();
 const isValidObjectId = (id) => mongoose.Types.ObjectId.isValid(id);
 
+// Helper function to sanitize query parameters
+const sanitizeQuery = (value) => {
+  if (typeof value !== "string") return value;
+  return value.trim().replace(/[<>"'%;()&+]/g, "");
+};
+
 // @route GET /api/products
 // @desc Lấy tất cả sản phẩm với bộ lọc
 // @access Public
@@ -27,30 +33,53 @@ router.get("/", async (req, res) => {
 
     let query = {};
 
-    if (collection && collection.toLowerCase() !== "all")
-      query.collection = collection;
-    if (category && category.toLowerCase() !== "all") query.category = category;
-    if (material)
-      query.material = { $in: material.split(",").map((m) => m.trim()) };
-    if (brand) query.brand = { $in: brand.split(",").map((b) => b.trim()) };
-    if (size) query.sizes = { $in: size.split(",").map((s) => s.trim()) };
-    if (color) query.colors = { $in: color.split(",").map((c) => c.trim()) };
-    if (gender) query.gender = gender;
+    if (collection && collection.toLowerCase() !== "all") {
+      query.collection = sanitizeQuery(collection);
+    }
+    if (category && category.toLowerCase() !== "all") {
+      query.category = sanitizeQuery(category);
+    }
+    if (material) {
+      const materials = sanitizeQuery(material).split(",").filter((m) => m);
+      if (materials.length) query.material = { $in: materials };
+    }
+    if (brand) {
+      const brands = sanitizeQuery(brand).split(",").filter((b) => b);
+      if (brands.length) query.brand = { $in: brands };
+    }
+    if (size) {
+      const sizes = sanitizeQuery(size).split(",").filter((s) => s);
+      if (sizes.length) query.sizes = { $in: sizes };
+    }
+    if (color) {
+      const colors = sanitizeQuery(color).split(",").filter((c) => c);
+      if (colors.length) query.colors = { $in: colors };
+    }
+    if (gender) {
+      query.gender = sanitizeQuery(gender);
+    }
     if (minPrice || maxPrice) {
       query.price = {};
-      if (minPrice) query.price.$gte = Number(minPrice);
-      if (maxPrice) query.price.$lte = Number(maxPrice);
+      if (minPrice && !isNaN(Number(minPrice))) {
+        query.price.$gte = Number(minPrice);
+      }
+      if (maxPrice && !isNaN(Number(maxPrice))) {
+        query.price.$lte = Number(maxPrice);
+      }
     }
     if (search) {
-      query.$or = [
-        { name: { $regex: search, $options: "i" } },
-        { description: { $regex: search, $options: "i" } },
-      ];
+      const sanitizedSearch = sanitizeQuery(search);
+      if (sanitizedSearch) {
+        query.$or = [
+          { name: { $regex: sanitizedSearch, $options: "i" } },
+          { description: { $regex: sanitizedSearch, $options: "i" } },
+        ];
+      }
     }
 
     let sort = {};
     if (sortBy) {
-      switch (sortBy) {
+      switch (sanitizeQuery(sortBy)) {
         case "priceAsc":
           sort = { price: 1 };
           break;
@@ -60,12 +89,14 @@ router.get("/", async (req, res) => {
         case "popularity":
           sort = { rating: -1 };
           break;
+        default:
+          sort = { createdAt: -1 }; // Default sort
       }
     }
 
     const products = await Product.find(query)
       .sort(sort)
-      .limit(Number(limit) || 0);
+      .limit(Number(limit) > 0 ? Number(limit) : 0);
     res.json(products);
   } catch (error) {
     console.error("Lỗi khi lấy danh sách sản phẩm:", error);
