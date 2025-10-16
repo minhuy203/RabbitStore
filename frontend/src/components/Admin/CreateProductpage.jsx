@@ -1,12 +1,58 @@
-import React, { useState } from "react";
-import { useDispatch } from "react-redux";
-import { useNavigate } from "react-router-dom";
-import { createProduct } from "../../redux/slices/adminProductSlice";
+import React, { useEffect, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { useNavigate, useParams } from "react-router-dom";
+import { fetchProductsDetails } from "../../redux/slices/productSlice";
+import { updateProduct } from "../../redux/slices/adminProductSlice";
 import axios from "axios";
 
-const CreateProductPage = () => {
+const colors = [
+  "Trắng",
+  "Đen",
+  "Xanh Dương",
+  "Xám",
+  "Xanh Đậm",
+  "Xanh Nhạt",
+  "Xanh Lá",
+  "Xanh Ô Liu",
+  "Đỏ",
+  "Xám Nhạt",
+  "Xám Đậm",
+  "Xanh Lục",
+  "Hồng Phấn",
+  "Be",
+  "Nâu",
+  "Nâu Nhạt",
+  "Kaki",
+];
+
+const colorMap = {
+  Trắng: "#FFFFFF",
+  Đen: "#000000",
+  "Xanh Dương": "#0000FF",
+  Xám: "#808080",
+  "Xanh Đậm": "#003087",
+  "Xanh Nhạt": "#ADD8E6",
+  "Xanh Lá": "#008000",
+  "Xanh Ô Liu": "#808000",
+  Đỏ: "#FF0000",
+  "Xám Nhạt": "#D3D3D3",
+  "Xám Đậm": "#A9A9A9",
+  "Xanh Lục": "#008000",
+  "Hồng Phấn": "#FFB6C1",
+  Be: "#F5F5DC",
+  Nâu: "#A52A2A",
+  "Nâu Nhạt": "#DEB887",
+  Kaki: "#C3B091",
+};
+
+const EditProductPage = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const { id } = useParams();
+
+  const { selectedProduct, loading, error } = useSelector(
+    (state) => state.products
+  );
 
   const [productData, setProductData] = useState({
     name: "",
@@ -27,6 +73,29 @@ const CreateProductPage = () => {
 
   const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState("");
+
+  // Lấy product theo id
+  useEffect(() => {
+    if (id) {
+      dispatch(fetchProductsDetails(id));
+    }
+  }, [dispatch, id]);
+
+  // Set data khi fetch về
+  useEffect(() => {
+    if (selectedProduct) {
+      setProductData({
+        ...selectedProduct,
+        gender:
+          selectedProduct.gender === "male"
+            ? "Nam"
+            : selectedProduct.gender === "female"
+            ? "Nữ"
+            : selectedProduct.gender || "",
+        colors: selectedProduct.colors || [], // Đảm bảo colors là mảng
+      });
+    }
+  }, [selectedProduct]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -50,14 +119,14 @@ const CreateProductPage = () => {
 
       const imageUrl = data.imageUrl || data.url || data.path;
 
-      setProductData((prevData) => ({
-        ...prevData,
-        images: [...prevData.images, { url: imageUrl, altText: file.name }],
+      setProductData((prev) => ({
+        ...prev,
+        images: [...prev.images, { url: imageUrl, altText: file.name }],
       }));
 
       e.target.value = "";
-    } catch (error) {
-      console.error("Upload error:", error);
+    } catch (err) {
+      console.error("Upload error:", err);
       setMessage("❌ Upload ảnh thất bại!");
       setTimeout(() => setMessage(""), 3000);
     } finally {
@@ -68,20 +137,23 @@ const CreateProductPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await dispatch(createProduct(productData)).unwrap();
-      setMessage("✅ Tạo sản phẩm thành công!");
+      await dispatch(updateProduct({ id, productData })).unwrap();
+      setMessage("✅ Cập nhật sản phẩm thành công!");
       setTimeout(() => setMessage(""), 3000);
       navigate("/admin/products");
-    } catch (error) {
-      console.error("Lỗi khi tạo sản phẩm:", error);
-      setMessage("❌ Tạo sản phẩm thất bại!");
+    } catch (err) {
+      console.error("Update error:", err);
+      setMessage("❌ Cập nhật thất bại!");
       setTimeout(() => setMessage(""), 3000);
     }
   };
 
+  if (loading) return <p>Đang tải...</p>;
+  if (error) return <p className="text-red-500">Lỗi: {error}</p>;
+
   return (
     <div className="max-w-5xl mx-auto p-6 shadow-md rounded-md">
-      <h2 className="text-3xl font-bold mb-4">Thêm sản phẩm mới</h2>
+      <h2 className="text-3xl font-bold mb-4">Chỉnh sửa sản phẩm</h2>
 
       {message && (
         <div
@@ -247,21 +319,40 @@ const CreateProductPage = () => {
 
         {/* Colors */}
         <div className="mb-4">
-          <label className="block font-semibold mb-2">
-            Màu sắc (cách nhau bởi dấu ", ")
-          </label>
-          <input
-            type="text"
-            name="colors"
-            value={productData.colors.join(", ")}
-            onChange={(e) =>
-              setProductData({
-                ...productData,
-                colors: e.target.value.split(",").map((c) => c.trim()),
-              })
-            }
-            className="w-full border border-gray-300 rounded-md p-2"
-          />
+          <label className="block font-semibold mb-2">Màu sắc</label>
+          <div className="flex flex-wrap gap-4">
+            {colors.map((color) => (
+              <div key={color} className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  name="colors"
+                  value={color}
+                  checked={productData.colors.includes(color)}
+                  onChange={(e) => {
+                    const { value, checked } = e.target;
+                    setProductData((prev) => ({
+                      ...prev,
+                      colors: checked
+                        ? [...prev.colors, value]
+                        : prev.colors.filter((c) => c !== value),
+                    }));
+                  }}
+                  className="h-4 w-4 text-blue-500 focus:ring-blue-400 border-gray-300"
+                  id={`color-${color}`}
+                />
+                <label
+                  htmlFor={`color-${color}`}
+                  className="flex items-center gap-2 cursor-pointer"
+                >
+                  <div
+                    className="w-6 h-6 rounded-full border border-gray-300"
+                    style={{ backgroundColor: colorMap[color] || "#CCCCCC" }}
+                  ></div>
+                  <span>{color}</span>
+                </label>
+              </div>
+            ))}
+          </div>
         </div>
 
         {/* Collections */}
@@ -344,11 +435,11 @@ const CreateProductPage = () => {
           type="submit"
           className="w-full bg-green-500 text-white py-2 rounded-md hover:bg-green-600 transition-colors"
         >
-          Tạo sản phẩm
+          Cập nhật sản phẩm
         </button>
       </form>
     </div>
   );
 };
 
-export default CreateProductPage;
+export default EditProductPage;

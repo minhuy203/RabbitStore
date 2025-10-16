@@ -5,6 +5,46 @@ import { fetchProductsDetails } from "../../redux/slices/productSlice";
 import { updateProduct } from "../../redux/slices/adminProductSlice";
 import axios from "axios";
 
+const colors = [
+  "Trắng",
+  "Đen",
+  "Xanh Dương",
+  "Xám",
+  "Xanh Đậm",
+  "Xanh Nhạt",
+  "Xanh Lá",
+  "Xanh Ô Liu",
+  "Đỏ",
+  "Xám Nhạt",
+  "Xám Đậm",
+  "Xanh Lục",
+  "Hồng Phấn",
+  "Be",
+  "Nâu",
+  "Nâu Nhạt",
+  "Kaki",
+];
+
+const colorMap = {
+  Trắng: "#FFFFFF",
+  Đen: "#000000",
+  "Xanh Dương": "#0000FF",
+  Xám: "#808080",
+  "Xanh Đậm": "#003087",
+  "Xanh Nhạt": "#ADD8E6",
+  "Xanh Lá": "#008000",
+  "Xanh Ô Liu": "#808000",
+  Đỏ: "#FF0000",
+  "Xám Nhạt": "#D3D3D3",
+  "Xám Đậm": "#A9A9A9",
+  "Xanh Lục": "#008000",
+  "Hồng Phấn": "#FFB6C1",
+  Be: "#F5F5DC",
+  Nâu: "#A52A2A",
+  "Nâu Nhạt": "#DEB887",
+  Kaki: "#C3B091",
+};
+
 const EditProductPage = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -52,6 +92,7 @@ const EditProductPage = () => {
             : selectedProduct.gender === "female"
             ? "Nữ"
             : selectedProduct.gender || "",
+        colors: selectedProduct.colors || [], // Đảm bảo colors là mảng
       });
     }
   }, [selectedProduct]);
@@ -278,21 +319,40 @@ const EditProductPage = () => {
 
         {/* Colors */}
         <div className="mb-4">
-          <label className="block font-semibold mb-2">
-            Màu sắc (cách nhau bởi dấu ", ")
-          </label>
-          <input
-            type="text"
-            name="colors"
-            value={productData.colors.join(", ")}
-            onChange={(e) =>
-              setProductData({
-                ...productData,
-                colors: e.target.value.split(",").map((c) => c.trim()),
-              })
-            }
-            className="w-full border border-gray-300 rounded-md p-2"
-          />
+          <label className="block font-semibold mb-2">Màu sắc</label>
+          <div className="flex flex-wrap gap-4">
+            {colors.map((color) => (
+              <div key={color} className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  name="colors"
+                  value={color}
+                  checked={productData.colors.includes(color)}
+                  onChange={(e) => {
+                    const { value, checked } = e.target;
+                    setProductData((prev) => ({
+                      ...prev,
+                      colors: checked
+                        ? [...prev.colors, value]
+                        : prev.colors.filter((c) => c !== value),
+                    }));
+                  }}
+                  className="h-4 w-4 text-blue-500 focus:ring-blue-400 border-gray-300"
+                  id={`color-${color}`}
+                />
+                <label
+                  htmlFor={`color-${color}`}
+                  className="flex items-center gap-2 cursor-pointer"
+                >
+                  <div
+                    className="w-6 h-6 rounded-full border border-gray-300"
+                    style={{ backgroundColor: colorMap[color] || "#CCCCCC" }}
+                  ></div>
+                  <span>{color}</span>
+                </label>
+              </div>
+            ))}
+          </div>
         </div>
 
         {/* Collections */}
