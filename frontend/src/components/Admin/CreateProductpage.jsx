@@ -138,14 +138,18 @@ const EditProductPage = () => {
     e.preventDefault();
     try {
       await dispatch(updateProduct({ id, productData })).unwrap();
-      setMessage("✅ Cập nhật sản phẩm thành công!");
+      setMessage("✅ Thêm mới sản phẩm thành công!");
       setTimeout(() => setMessage(""), 3000);
       navigate("/admin/products");
     } catch (err) {
       console.error("Update error:", err);
-      setMessage("❌ Cập nhật thất bại!");
+      setMessage("❌ Thêm mới thất bại!");
       setTimeout(() => setMessage(""), 3000);
     }
+  };
+
+  const handleCancel = () => {
+    navigate("/admin/products");
   };
 
   if (loading) return <p>Đang tải...</p>;
@@ -431,12 +435,22 @@ const EditProductPage = () => {
           </div>
         </div>
 
-        <button
-          type="submit"
-          className="w-full bg-green-500 text-white py-2 rounded-md hover:bg-green-600 transition-colors"
-        >
-          Cập nhật sản phẩm
-        </button>
+        {/* Buttons */}
+        <div className="flex gap-4">
+          <button
+            type="submit"
+            className="w-full bg-green-500 text-white py-2 rounded-md hover:bg-green-600 transition-colors"
+          >
+            Thêm mới sản phẩm
+          </button>
+          <button
+            type="button"
+            onClick={handleCancel}
+            className="w-full bg-gray-500 text-white py-2 rounded-md hover:bg-gray-600 transition-colors"
+          >
+            Hủy
+          </button>
+        </div>
       </form>
     </div>
   );
