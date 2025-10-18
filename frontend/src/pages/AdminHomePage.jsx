@@ -15,7 +15,6 @@ const AdminHomePage = () => {
   const {
     orders,
     totalOrders,
-    totalSales,
     loading: ordersLoading,
     error: ordersError,
   } = useSelector((state) => state.adminOrders);
@@ -29,6 +28,11 @@ const AdminHomePage = () => {
     filteredTotalOrders: 0,
     filteredTotalSales: 0,
   });
+
+  // Tính tổng doanh thu chỉ từ các đơn hàng có trạng thái "delivered"
+  const totalSales = orders
+    .filter((order) => order.status?.toLowerCase() === "delivered")
+    .reduce((acc, order) => acc + (order.totalPrice || 0), 0);
 
   useEffect(() => {
     dispatch(fetchAdminProducts());
@@ -101,7 +105,7 @@ const AdminHomePage = () => {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           <div className="p-4 shadow-md rounded-lg bg-white">
-            <h2 className="text-xl font-semibold">Doanh thu (Tổng)</h2>
+            <h2 className="text-xl font-semibold">Doanh thu (Tổng - Đã giao hàng)</h2>
             <p className="text-2xl">{formatVND(totalSales)}</p>
           </div>
           <div className="p-4 shadow-md rounded-lg bg-white">
