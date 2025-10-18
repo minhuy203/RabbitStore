@@ -60,7 +60,11 @@ const AdminHomePage = () => {
   useEffect(() => {
     const filtered = orders.filter((order) => {
       const orderDate = new Date(order.createdAt);
-      return orderDate >= dateRange.startDate && orderDate <= dateRange.endDate;
+      return (
+        orderDate >= dateRange.startDate &&
+        orderDate <= dateRange.endDate &&
+        order.status?.toLowerCase() === "delivered"
+      );
     });
 
     const stats = filtered.reduce(
@@ -105,7 +109,9 @@ const AdminHomePage = () => {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           <div className="p-4 shadow-md rounded-lg bg-white">
-            <h2 className="text-xl font-semibold">Doanh thu (Tổng - Đã giao hàng)</h2>
+            <h2 className="text-xl font-semibold">
+              Doanh thu (Tổng - Đã giao hàng)
+            </h2>
             <p className="text-2xl">{formatVND(totalSales)}</p>
           </div>
           <div className="p-4 shadow-md rounded-lg bg-white">
@@ -143,20 +149,22 @@ const AdminHomePage = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-6">
           <div className="p-4 shadow-md rounded-lg bg-white">
             <h3 className="text-lg font-semibold">
-              Tổng đơn hàng (Khoảng thời gian)
+              Tổng đơn hàng (Khoảng thời gian - Đã giao hàng)
             </h3>
             <p className="text-2xl">{filteredStats.filteredTotalOrders}</p>
           </div>
           <div className="p-4 shadow-md rounded-lg bg-white">
             <h3 className="text-lg font-semibold">
-              Doanh thu (Khoảng thời gian)
+              Doanh thu (Khoảng thời gian - Đã giao hàng)
             </h3>
             <p className="text-2xl">
               {formatVND(filteredStats.filteredTotalSales)}
             </p>
           </div>
         </div>
-        <h3 className="text-xl font-semibold mb-4">Danh sách đơn hàng</h3>
+        <h3 className="text-xl font-semibold mb-4">
+          Danh sách đơn hàng (Đã giao hàng)
+        </h3>
         <div className="overflow-x-auto">
           <table className="min-w-full text-left text-gray-500">
             <thead className="bg-gray-100 text-xs uppercase text-gray-700">
@@ -189,7 +197,7 @@ const AdminHomePage = () => {
               ) : (
                 <tr>
                   <td colSpan={5} className="p-4 text-center text-gray-500">
-                    Không có đơn hàng nào trong khoảng thời gian này.
+                    Không có đơn hàng đã giao trong khoảng thời gian này.
                   </td>
                 </tr>
               )}
