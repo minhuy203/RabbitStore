@@ -109,9 +109,7 @@ const AdminHomePage = () => {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           <div className="p-4 shadow-md rounded-lg bg-white">
-            <h2 className="text-xl font-semibold">
-              Doanh thu (Tổng - Đã giao hàng)
-            </h2>
+            <h2 className="text-xl font-semibold">Doanh thu (Tổng)</h2>
             <p className="text-2xl">{formatVND(totalSales)}</p>
           </div>
           <div className="p-4 shadow-md rounded-lg bg-white">
@@ -148,15 +146,11 @@ const AdminHomePage = () => {
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-6">
           <div className="p-4 shadow-md rounded-lg bg-white">
-            <h3 className="text-lg font-semibold">
-              Tổng đơn hàng (Khoảng thời gian - Đã giao hàng)
-            </h3>
+            <h3 className="text-lg font-semibold">Số lượng đơn hàng</h3>
             <p className="text-2xl">{filteredStats.filteredTotalOrders}</p>
           </div>
           <div className="p-4 shadow-md rounded-lg bg-white">
-            <h3 className="text-lg font-semibold">
-              Doanh thu (Khoảng thời gian - Đã giao hàng)
-            </h3>
+            <h3 className="text-lg font-semibold">Doanh thu</h3>
             <p className="text-2xl">
               {formatVND(filteredStats.filteredTotalSales)}
             </p>
