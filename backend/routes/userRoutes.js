@@ -14,7 +14,7 @@ router.post("/register", async (req, res) => {
 
   try {
     // Validate name
-    const nameRegex = /^[a-zA-Z\s]+$/;
+    const nameRegex = /^[\p{L}\s]+$/u;
     if (!nameRegex.test(name)) {
       return res
         .status(400)
