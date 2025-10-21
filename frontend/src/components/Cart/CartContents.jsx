@@ -16,11 +16,14 @@ const CartContents = ({ cart = { products: [] }, userId, guestId }) => {
 
     // Kiểm tra giới hạn số lượng
     if (action === "plus" && quantity >= countInStock) {
-      return; // Không làm gì nếu vượt quá tồn kho
+      return;
     }
     if (action === "minus" && quantity <= 1) {
-      return; // Không làm gì nếu số lượng nhỏ hơn hoặc bằng 1
+      return;
     }
+
+    // Lưu số lượng hiện tại để rollback nếu cần
+    const originalQuantity = quantity;
 
     // Cập nhật giao diện ngay lập tức
     dispatch(
@@ -32,7 +35,7 @@ const CartContents = ({ cart = { products: [] }, userId, guestId }) => {
       })
     );
 
-    // Gửi yêu cầu API và xử lý lỗi
+    // Gửi yêu cầu API
     dispatch(
       updateCartItemQuantity({
         productId,
@@ -49,7 +52,7 @@ const CartContents = ({ cart = { products: [] }, userId, guestId }) => {
           productId,
           size,
           color,
-          quantity, // Hoàn nguyên về số lượng cũ
+          quantity: originalQuantity,
         })
       );
       toast.error("Lỗi khi cập nhật số lượng: " + error.message, { duration: 1000 });
