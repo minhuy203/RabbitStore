@@ -151,14 +151,45 @@ router.get("/similar/:id", async (req, res) => {
     if (!product)
       return res.status(404).json({ message: "Không tìm thấy sản phẩm" });
 
-    const similarProducts = await Product.find({
+    console.log("Finding similar products for:", product.category, product.gender); // SỬA: Thêm log
+
+    // Thử tìm theo cả gender và category trước
+    let similarProducts = await Product.find({
       _id: { $ne: id },
       gender: product.gender,
       category: product.category,
     }).limit(4);
 
+    // Nếu không tìm thấy, thử tìm theo category
+    if (similarProducts.length === 0 && product.category) {
+      console.log("No products found with gender+category, trying category only"); // SỬA: Thêm log
+      similarProducts = await Product.find({
+        _id: { $ne: id },
+        category: product.category,
+      }).limit(4);
+    }
+
+    // Nếu vẫn không tìm thấy, thử tìm theo gender
+    if (similarProducts.length === 0 && product.gender) {
+      console.log("No products found with category, trying gender only"); // SỬA: Thêm log
+      similarProducts = await Product.find({
+        _id: { $ne: id },
+        gender: product.gender,
+      }).limit(4);
+    }
+
+    // Nếu vẫn không tìm thấy, trả về sản phẩm bất kỳ (trừ sản phẩm hiện tại)
+    if (similarProducts.length === 0) {
+      console.log("No similar products found, returning random products"); // SỬA: Thêm log
+      similarProducts = await Product.find({
+        _id: { $ne: id },
+      }).limit(4);
+    }
+
+    console.log("Found", similarProducts.length, "similar products"); // SỬA: Thêm log
     res.json(similarProducts);
   } catch (error) {
+    console.error("Lỗi khi lấy sản phẩm tương tự:", error);
     res.status(500).json({ message: "Lỗi server", error: error.message });
   }
 });

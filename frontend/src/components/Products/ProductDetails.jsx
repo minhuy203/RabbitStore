@@ -13,11 +13,19 @@ const ProductDetails = ({ productId }) => {
   const { id } = useParams();
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { selectedProduct, loading: productLoading, error: productError } = useSelector(
-    (state) => state.products
-  );
+  
+  // SỬA: Lấy thêm similarProducts từ Redux store
+  const { 
+    selectedProduct, 
+    similarProducts, 
+    loading: productLoading, 
+    similarProductsLoading, 
+    error: productError 
+  } = useSelector((state) => state.products);
+  
   const { user, guestId } = useSelector((state) => state.auth);
   const { loading: cartLoading } = useSelector((state) => state.cart);
+  
   const [mainImage, setMainImage] = useState("");
   const [selectedSize, setSelectedSize] = useState("");
   const [selectedColor, setSelectedColor] = useState("");
@@ -131,6 +139,12 @@ const ProductDetails = ({ productId }) => {
         });
       });
   };
+
+  // SỬA: Thêm log để debug
+  useEffect(() => {
+    console.log("similarProducts:", similarProducts);
+    console.log("similarProductsLoading:", similarProductsLoading);
+  }, [similarProducts, similarProductsLoading]);
 
   if (productLoading) return <p>Đang tải...</p>;
   if (productError) return <p>Lỗi: {productError}</p>;
@@ -300,13 +314,15 @@ const ProductDetails = ({ productId }) => {
               </div>
             </div>
           </div>
+          
+          {/* SỬA: Sử dụng similarProducts thay vì selectedProduct.similarProducts */}
           <div className="mt-20">
             <h2 className="text-2xl text-center font-medium mb-4">
               Có Thể Bạn Sẽ Thích
             </h2>
             <ProductGrid
-              products={selectedProduct.similarProducts || []}
-              loading={productLoading}
+              products={similarProducts || []}
+              loading={similarProductsLoading || productLoading}
               error={productError}
             />
           </div>

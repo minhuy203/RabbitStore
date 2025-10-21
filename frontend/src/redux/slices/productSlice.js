@@ -91,11 +91,14 @@ export const fetchSimilarProducts = createAsyncThunk(
   "products/fetchSimilarProducts",
   async ({ id }, { rejectWithValue }) => {
     try {
+      console.log("Fetching similar products for ID:", id); // SỬA: Thêm log
       const response = await axios.get(
         `${import.meta.env.VITE_BACKEND_URL}/api/products/similar/${id}`
       );
+      console.log("Similar products response:", response.data); // SỬA: Thêm log
       return response.data;
     } catch (error) {
+      console.error("Error fetching similar products:", error.response?.data); // SỬA: Thêm log
       return rejectWithValue(
         error.response?.data?.message || "Lỗi khi lấy sản phẩm tương tự"
       );
@@ -110,6 +113,8 @@ const productsSlice = createSlice({
     selectedProduct: null,
     similarProducts: [],
     loading: false,
+    // SỬA: Thêm trạng thái loading riêng cho similarProducts
+    similarProductsLoading: false,
     error: null,
     filters: {
       category: "",
@@ -190,17 +195,20 @@ const productsSlice = createSlice({
         state.loading = false;
         state.error = action.payload;
       })
+      // SỬA: Cập nhật xử lý fetchSimilarProducts
       .addCase(fetchSimilarProducts.pending, (state) => {
-        state.loading = true;
+        state.similarProductsLoading = true;
         state.error = null;
       })
       .addCase(fetchSimilarProducts.fulfilled, (state, action) => {
-        state.loading = false;
-        state.similarProducts = action.payload;
+        state.similarProductsLoading = false;
+        // SỬA: Đảm bảo luôn là mảng
+        state.similarProducts = Array.isArray(action.payload) ? action.payload : [];
       })
       .addCase(fetchSimilarProducts.rejected, (state, action) => {
-        state.loading = false;
+        state.similarProductsLoading = false;
         state.error = action.payload;
+        state.similarProducts = []; // SỬA: Reset thành mảng rỗng khi có lỗi
       });
   },
 });
