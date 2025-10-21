@@ -9,6 +9,16 @@ const saveCartToStorage = (cart) => {
   }
 };
 
+const loadCartFromStorage = () => {
+  try {
+    const cart = localStorage.getItem("cart");
+    return cart ? JSON.parse(cart) : { products: [], totalPrice: 0 };
+  } catch (error) {
+    console.error("Lỗi khi tải giỏ hàng từ localStorage:", error.message);
+    return { products: [], totalPrice: 0 };
+  }
+};
+
 // Lấy giỏ hàng
 export const fetchCart = createAsyncThunk(
   "cart/fetchCart",
@@ -175,7 +185,7 @@ export const mergeCart = createAsyncThunk(
 const cartSlice = createSlice({
   name: "cart",
   initialState: {
-    cart: { products: [], totalPrice: 0 },
+    cart: loadCartFromStorage(),
     loading: false,
     error: null,
   },
