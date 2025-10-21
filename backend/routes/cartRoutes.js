@@ -2,8 +2,9 @@ const express = require("express");
 const Cart = require("../models/Cart");
 const Product = require("../models/Product");
 const { protect } = require("../middleware/authMiddleware");
-const router = express.Router();
+const router = express.Router(); // Sửa từ require("./userRoutes") thành express.Router()
 
+// Helper function to get a cart by userId or guestId
 const getCart = async (userId, guestId) => {
   if (userId) {
     return await Cart.findOne({ user: userId });
@@ -13,33 +14,15 @@ const getCart = async (userId, guestId) => {
   return null;
 };
 
+// @route POST /api/cart
+// @desc Add product to cart
+// @access Public
 router.post("/", async (req, res) => {
-  const {
-    productId,
-    quantity,
-    size,
-    color,
-    guestId,
-    userId,
-    name,
-    price,
-    discountPrice,
-    image,
-  } = req.body;
+  const { productId, quantity, size, color, guestId, userId, name, price, discountPrice, image } = req.body;
   try {
     const product = await Product.findById(productId);
     if (!product) {
-      return res.status(404).json({ message: "Sản phẩm không tồn tại" });
-    }
-
-    if (quantity > product.countInStock) {
-      return res.status(400).json({ message: "Số lượng vượt quá tồn kho" });
-    }
-
-    if (!product.sizes.includes(size) || !product.colors.includes(color)) {
-      return res
-        .status(400)
-        .json({ message: "Kích cỡ hoặc màu sắc không hợp lệ" });
+      return res.status(404).json({ message: "Product not found" });
     }
 
     let cart = await getCart(userId, guestId);
@@ -53,28 +36,23 @@ router.post("/", async (req, res) => {
       );
 
       if (productIndex > -1) {
-        if (
-          cart.products[productIndex].quantity + quantity >
-          product.countInStock
-        ) {
-          return res.status(400).json({ message: "Số lượng vượt quá tồn kho" });
-        }
+        // Update quantity
         cart.products[productIndex].quantity += quantity;
-        cart.products[productIndex].countInStock = product.countInStock;
       } else {
+        // Add new product
         cart.products.push({
           productId,
           name: name || product.name,
           image: image || product.images[0].url,
           price: price || product.price,
-          discountPrice: discountPrice || product.discountPrice || null,
+          discountPrice: discountPrice || product.discountPrice || null, // Lưu discountPrice
           size,
           color,
           quantity,
-          countInStock: product.countInStock,
         });
       }
 
+      // Recalculate total price using discountPrice if available
       cart.totalPrice = cart.products.reduce(
         (acc, item) => acc + (item.discountPrice || item.price) * item.quantity,
         0
@@ -82,6 +60,7 @@ router.post("/", async (req, res) => {
       await cart.save();
       return res.status(200).json(cart);
     } else {
+      // Create new cart
       const newCart = await Cart.create({
         user: userId ? userId : undefined,
         guestId: guestId ? guestId : "guest_" + new Date().getTime(),
@@ -91,44 +70,30 @@ router.post("/", async (req, res) => {
             name: name || product.name,
             image: image || product.images[0].url,
             price: price || product.price,
-            discountPrice: discountPrice || product.discountPrice || null,
+            discountPrice: discountPrice || product.discountPrice || null, // Lưu discountPrice
             size,
             color,
             quantity,
-            countInStock: product.countInStock,
           },
         ],
-        totalPrice: (discountPrice || product.price) * quantity,
+        totalPrice: (discountPrice || product.price) * quantity, // Dùng discountPrice nếu có
       });
       return res.status(201).json(newCart);
     }
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Lỗi server" });
+    res.status(500).json({ message: "Server error" });
   }
 });
 
+// @route PUT /api/cart
+// @desc Update product quantity
+// @access Public
 router.put("/", async (req, res) => {
   const { productId, quantity, size, color, guestId, userId } = req.body;
   try {
     let cart = await getCart(userId, guestId);
-    if (!cart)
-      return res.status(404).json({ message: "Không tìm thấy giỏ hàng" });
-
-    const product = await Product.findById(productId);
-    if (!product) {
-      return res.status(404).json({ message: "Sản phẩm không tồn tại" });
-    }
-
-    if (quantity > product.countInStock) {
-      return res.status(400).json({ message: "Số lượng vượt quá tồn kho" });
-    }
-
-    if (!product.sizes.includes(size) || !product.colors.includes(color)) {
-      return res
-        .status(400)
-        .json({ message: "Kích cỡ hoặc màu sắc không hợp lệ" });
-    }
+    if (!cart) return res.status(404).json({ message: "Cart not found" });
 
     const productIndex = cart.products.findIndex(
       (p) =>
@@ -140,11 +105,11 @@ router.put("/", async (req, res) => {
     if (productIndex > -1) {
       if (quantity > 0) {
         cart.products[productIndex].quantity = quantity;
-        cart.products[productIndex].countInStock = product.countInStock;
       } else {
-        cart.products.splice(productIndex, 1);
+        cart.products.splice(productIndex, 1); // Remove product if quantity is 0
       }
 
+      // Recalculate total price
       cart.totalPrice = cart.products.reduce(
         (acc, item) => acc + (item.discountPrice || item.price) * item.quantity,
         0
@@ -152,22 +117,22 @@ router.put("/", async (req, res) => {
       await cart.save();
       return res.status(200).json(cart);
     } else {
-      return res
-        .status(404)
-        .json({ message: "Không tìm thấy sản phẩm trong giỏ hàng" });
+      return res.status(404).json({ message: "Product not found in cart" });
     }
   } catch (error) {
     console.error(error);
-    return res.status(500).json({ message: "Lỗi server" });
+    return res.status(500).json({ message: "Server error" });
   }
 });
 
+// @route DELETE /api/cart
+// @desc Remove product from cart
+// @access Public
 router.delete("/", async (req, res) => {
   const { productId, size, color, guestId, userId } = req.body;
   try {
     let cart = await getCart(userId, guestId);
-    if (!cart)
-      return res.status(404).json({ message: "Không tìm thấy giỏ hàng" });
+    if (!cart) return res.status(404).json({ message: "Cart not found" });
 
     const productIndex = cart.products.findIndex(
       (p) =>
@@ -179,6 +144,7 @@ router.delete("/", async (req, res) => {
     if (productIndex > -1) {
       cart.products.splice(productIndex, 1);
 
+      // Recalculate total price
       cart.totalPrice = cart.products.reduce(
         (acc, item) => acc + (item.discountPrice || item.price) * item.quantity,
         0
@@ -186,16 +152,17 @@ router.delete("/", async (req, res) => {
       await cart.save();
       return res.status(200).json(cart);
     } else {
-      return res
-        .status(404)
-        .json({ message: "Không tìm thấy sản phẩm trong giỏ hàng" });
+      return res.status(404).json({ message: "Product not found in cart" });
     }
   } catch (error) {
     console.error(error);
-    return res.status(500).json({ message: "Lỗi server" });
+    return res.status(500).json({ message: "Server error" });
   }
 });
 
+// @route GET /api/cart
+// @desc Get logged-in user's or guest user's cart
+// @access Public
 router.get("/", async (req, res) => {
   const { userId, guestId } = req.query;
 
@@ -204,14 +171,17 @@ router.get("/", async (req, res) => {
     if (cart) {
       res.json(cart);
     } else {
-      res.json({ products: [], totalPrice: 0 });
+      res.json({ products: [], totalPrice: 0 }); // Trả về giỏ hàng rỗng thay vì lỗi
     }
   } catch (error) {
     console.error(error);
-    return res.status(500).json({ message: "Lỗi server" });
+    return res.status(500).json({ message: "Server error" });
   }
 });
 
+// @route POST /api/cart/merge
+// @desc Merge guest cart into user cart
+// @access Private
 router.post("/merge", protect, async (req, res) => {
   const { guestId } = req.body;
 
@@ -221,113 +191,50 @@ router.post("/merge", protect, async (req, res) => {
 
     if (guestCart) {
       if (guestCart.products.length === 0) {
-        return res
-          .status(200)
-          .json(userCart || { products: [], totalPrice: 0 });
+        return res.status(400).json({ message: "Guest cart is empty" });
       }
-
-      let mergedProducts = userCart ? [...userCart.products] : [];
-
-      for (const guestItem of guestCart.products) {
-        const product = await Product.findById(guestItem.productId);
-        if (
-          !product ||
-          guestItem.quantity > product.countInStock ||
-          !product.sizes.includes(guestItem.size) ||
-          !product.colors.includes(guestItem.color)
-        ) {
-          continue; // Bỏ qua sản phẩm không hợp lệ
-        }
-
-        const productIndex = mergedProducts.findIndex(
-          (item) =>
-            item.productId.toString() === guestItem.productId.toString() &&
-            item.size === guestItem.size &&
-            item.color === guestItem.color
-        );
-
-        if (productIndex > -1) {
-          if (
-            mergedProducts[productIndex].quantity + guestItem.quantity >
-            product.countInStock
-          ) {
-            continue;
-          }
-          mergedProducts[productIndex].quantity += guestItem.quantity;
-          mergedProducts[productIndex].countInStock = product.countInStock;
-        } else {
-          mergedProducts.push({
-            ...guestItem.toObject(),
-            countInStock: product.countInStock,
-          });
-        }
-      }
-
-      let finalCart;
       if (userCart) {
-        userCart.products = mergedProducts;
+        guestCart.products.forEach((guestItem) => {
+          const productIndex = userCart.products.findIndex(
+            (item) =>
+              item.productId.toString() === guestItem.productId.toString() &&
+              item.size === guestItem.size &&
+              item.color === guestItem.color
+          );
+          if (productIndex > -1) {
+            userCart.products[productIndex].quantity += guestItem.quantity;
+          } else {
+            userCart.products.push(guestItem);
+          }
+        });
+
         userCart.totalPrice = userCart.products.reduce(
-          (acc, item) =>
-            acc + (item.discountPrice || item.price) * item.quantity,
+          (acc, item) => acc + (item.discountPrice || item.price) * item.quantity,
           0
         );
-        finalCart = await userCart.save();
+        await userCart.save();
+
+        try {
+          await Cart.findOneAndDelete({ guestId });
+        } catch (error) {
+          console.error("Error deleting guest cart:", error);
+        }
+        res.status(200).json(userCart);
       } else {
-        const newCart = await Cart.create({
-          user: req.user._id,
-          products: mergedProducts,
-          totalPrice: mergedProducts.reduce(
-            (acc, item) =>
-              acc + (item.discountPrice || item.price) * item.quantity,
-            0
-          ),
-        });
-        finalCart = newCart;
+        guestCart.user = req.user._id;
+        guestCart.guestId = undefined;
+        await guestCart.save();
+        res.status(200).json(guestCart);
       }
-
-      await Cart.findOneAndDelete({ guestId });
-      return res.status(200).json(finalCart);
     } else {
-      return res.status(200).json(userCart || { products: [], totalPrice: 0 });
-    }
-  } catch (error) {
-    console.error(error);
-    return res.status(500).json({ message: "Lỗi server" });
-  }
-});
-
-router.post("/clean-guest-cart", async (req, res) => {
-  const { guestId } = req.body;
-  try {
-    let cart = await Cart.findOne({ guestId });
-    if (!cart) return res.status(200).json({ products: [], totalPrice: 0 });
-
-    const validProducts = [];
-    for (const item of cart.products) {
-      const product = await Product.findById(item.productId);
-      if (
-        product &&
-        product.sizes.includes(item.size) &&
-        product.colors.includes(item.color) &&
-        item.quantity <= product.countInStock
-      ) {
-        validProducts.push({
-          ...item.toObject(),
-          countInStock: product.countInStock,
-        });
+      if (userCart) {
+        return res.status(200).json(userCart);
       }
+      res.status(404).json({ message: "Guest cart not found" });
     }
-
-    cart.products = validProducts;
-    cart.totalPrice = cart.products.reduce(
-      (acc, item) => acc + (item.discountPrice || item.price) * item.quantity,
-      0
-    );
-    await cart.save();
-    return res.status(200).json(cart);
   } catch (error) {
     console.error(error);
-    return res.status(500).json({ message: "Lỗi server" });
+    return res.status(500).json({ message: "Server error" });
   }
 });
 
