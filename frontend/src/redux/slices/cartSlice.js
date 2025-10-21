@@ -1,6 +1,5 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import axios from "axios";
-import { toast } from "sonner";
 
 const loadCartFromStorage = () => {
   const storedCart = localStorage.getItem("cart");
@@ -23,7 +22,8 @@ export const fetchCart = createAsyncThunk(
       );
       return response.data;
     } catch (error) {
-      return rejectWithValue(error.response?.data?.message || "Lỗi khi lấy giỏ hàng");
+      console.error(error);
+      return rejectWithValue(error.response?.data || "Lỗi khi lấy giỏ hàng");
     }
   }
 );
@@ -43,7 +43,7 @@ export const addToCart = createAsyncThunk(
       discountPrice,
       image,
     },
-    { rejectWithValue, dispatch }
+    { rejectWithValue }
   ) => {
     try {
       const response = await axios.post(
@@ -57,15 +57,14 @@ export const addToCart = createAsyncThunk(
           userId,
           name,
           price,
-          discountPrice,
+          discountPrice, // Thêm discountPrice vào payload
           image,
         }
       );
-      dispatch(fetchCart({ userId, guestId }));
       return response.data;
     } catch (error) {
       return rejectWithValue(
-        error.response?.data?.message || "Lỗi khi thêm vào giỏ hàng"
+        error.response?.data || "Lỗi khi thêm vào giỏ hàng"
       );
     }
   }
@@ -92,7 +91,7 @@ export const updateCartItemQuantity = createAsyncThunk(
       return response.data;
     } catch (error) {
       return rejectWithValue(
-        error.response?.data?.message || "Lỗi khi cập nhật số lượng"
+        error.response?.data || "Lỗi khi cập nhật số lượng"
       );
     }
   }
@@ -102,17 +101,14 @@ export const removeFromCart = createAsyncThunk(
   "cart/removeFromCart",
   async ({ productId, guestId, userId, size, color }, { rejectWithValue }) => {
     try {
-      const response = await axios.delete(
-        `${import.meta.env.VITE_BACKEND_URL}/api/cart`,
-        {
-          data: { productId, guestId, userId, size, color },
-        }
-      );
+      const response = await axios({
+        method: "DELETE",
+        url: `${import.meta.env.VITE_BACKEND_URL}/api/cart`,
+        data: { productId, guestId, userId, size, color },
+      });
       return response.data;
     } catch (error) {
-      return rejectWithValue(
-        error.response?.data?.message || "Lỗi khi xóa sản phẩm"
-      );
+      return rejectWithValue(error.response?.data || "Lỗi khi xóa sản phẩm");
     }
   }
 );
@@ -122,9 +118,10 @@ export const mergeCart = createAsyncThunk(
   async ({ guestId, user }, { rejectWithValue }) => {
     try {
       const response = await axios.post(
-        `${import.meta.env.VITE_BACKEND_URL}/api/cart/merge`,
+        `${import.meta.env.VITE_BACKEND_URL}/api/cart`,
         {
           guestId,
+          user,
         },
         {
           headers: {
@@ -135,7 +132,7 @@ export const mergeCart = createAsyncThunk(
       return response.data;
     } catch (error) {
       return rejectWithValue(
-        error.response?.data?.message || "Lỗi khi hợp nhất giỏ hàng"
+        error.response?.data || "Lỗi khi hợp nhất giỏ hàng"
       );
     }
   }
@@ -153,18 +150,6 @@ const cartSlice = createSlice({
       state.cart = { products: [] };
       localStorage.removeItem("cart");
     },
-    updateCartItemQuantitySync: (state, action) => {
-      const { productId, size, color, quantity } = action.payload;
-      const productIndex = state.cart.products.findIndex(
-        (p) =>
-          p.productId.toString() === productId &&
-          p.size === size &&
-          p.color === color
-      );
-      if (productIndex > -1) {
-        state.cart.products[productIndex].quantity = quantity;
-      }
-    },
   },
   extraReducers: (builder) => {
     builder
@@ -179,7 +164,7 @@ const cartSlice = createSlice({
       })
       .addCase(fetchCart.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.payload;
+        state.error = action.payload?.message || "Không thể lấy giỏ hàng";
       })
       .addCase(addToCart.pending, (state) => {
         state.loading = true;
@@ -189,11 +174,10 @@ const cartSlice = createSlice({
         state.loading = false;
         state.cart = action.payload;
         saveCartToStorage(action.payload);
-        toast.success("Sản phẩm đã được thêm vào giỏ!", { duration: 1000 });
       })
       .addCase(addToCart.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.payload;
+        state.error = action.payload?.message || "Không thể thêm vào giỏ hàng";
       })
       .addCase(updateCartItemQuantity.pending, (state) => {
         state.loading = true;
@@ -206,7 +190,7 @@ const cartSlice = createSlice({
       })
       .addCase(updateCartItemQuantity.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.payload;
+        state.error = action.payload?.message || "Không thể cập nhật số lượng";
       })
       .addCase(removeFromCart.pending, (state) => {
         state.loading = true;
@@ -219,7 +203,7 @@ const cartSlice = createSlice({
       })
       .addCase(removeFromCart.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.payload;
+        state.error = action.payload?.message || "Không thể xóa sản phẩm";
       })
       .addCase(mergeCart.pending, (state) => {
         state.loading = true;
@@ -232,10 +216,10 @@ const cartSlice = createSlice({
       })
       .addCase(mergeCart.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.payload;
+        state.error = action.payload?.message || "Không thể hợp nhất giỏ hàng";
       });
   },
 });
 
-export const { clearCart, updateCartItemQuantitySync } = cartSlice.actions;
+export const { clearCart } = cartSlice.actions;
 export default cartSlice.reducer;
