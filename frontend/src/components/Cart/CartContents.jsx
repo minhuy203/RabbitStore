@@ -10,24 +10,26 @@ import { toast } from "sonner";
 const CartContents = ({ cart = { products: [] }, userId, guestId }) => {
   const dispatch = useDispatch();
 
-  const handleAddToCart = (
-    productId,
-    delta,
-    quantity,
-    size,
-    color,
-    countInStock
-  ) => {
-    const newQuantity = quantity + delta;
-    if (newQuantity >= 1) {
-      if (delta > 0 && newQuantity > countInStock) {
-        toast.error("Số lượng vượt quá tồn kho!", { duration: 1000 });
-        return;
-      }
+  const handleQuantityChange = (productId, size, color, quantity, countInStock, action) => {
+    if (action === "plus" && quantity < countInStock) {
       dispatch(
         updateCartItemQuantity({
           productId,
-          quantity: newQuantity,
+          quantity: quantity + 1,
+          guestId,
+          userId,
+          size,
+          color,
+        })
+      );
+    } else if (action === "plus" && quantity >= countInStock) {
+      toast.error("Số lượng vượt quá tồn kho!", { duration: 1000 });
+    }
+    if (action === "minus" && quantity > 1) {
+      dispatch(
+        updateCartItemQuantity({
+          productId,
+          quantity: quantity - 1,
           guestId,
           userId,
           size,
@@ -63,42 +65,55 @@ const CartContents = ({ cart = { products: [] }, userId, guestId }) => {
               <p className="text-sm text-gray-500">
                 size: {product.size} | color: {product.color}
               </p>
-              <div className="flex items-center mt-2">
-                <button
-                  onClick={() =>
-                    handleAddToCart(
-                      product.productId,
-                      -1,
-                      product.quantity,
-                      product.size,
-                      product.color,
-                      product.countInStock
-                    )
-                  }
-                  className="border rounded px-2 py-1 text-xl font-medium"
-                >
-                  -
-                </button>
-                <span className="mx-4">{product.quantity}</span>
-                <button
-                  onClick={() =>
-                    handleAddToCart(
-                      product.productId,
-                      1,
-                      product.quantity,
-                      product.size,
-                      product.color,
-                      product.countInStock
-                    )
-                  }
-                  className="border rounded px-2 py-1 text-xl font-medium"
-                >
-                  +
-                </button>
+              <div className="mb-6">
+                <p className="text-gray-700">Số lượng:</p>
+                <div className="flex items-center space-x-4 mt-2">
+                  <button
+                    onClick={() =>
+                      handleQuantityChange(
+                        product.productId,
+                        product.size,
+                        product.color,
+                        product.quantity,
+                        product.countInStock,
+                        "minus"
+                      )
+                    }
+                    disabled={product.countInStock === 0}
+                    className={`px-2 py-1 bg-gray-200 rounded text-lg ${
+                      product.countInStock === 0
+                        ? "opacity-50 cursor-not-allowed"
+                        : ""
+                    }`}
+                  >
+                    -
+                  </button>
+                  <span className="text-lg">{product.quantity}</span>
+                  <button
+                    onClick={() =>
+                      handleQuantityChange(
+                        product.productId,
+                        product.size,
+                        product.color,
+                        product.quantity,
+                        product.countInStock,
+                        "plus"
+                      )
+                    }
+                    disabled={product.countInStock === 0}
+                    className={`px-2 py-1 bg-gray-200 rounded text-lg ${
+                      product.countInStock === 0
+                        ? "opacity-50 cursor-not-allowed"
+                        : ""
+                    }`}
+                  >
+                    +
+                  </button>
+                  <span className="text-gray-600 text-sm ml-4">
+                    Còn {product.countInStock} sản phẩm trong kho
+                  </span>
+                </div>
               </div>
-              <p className="text-sm text-gray-600 mt-2">
-                Còn {product.countInStock} sản phẩm trong kho
-              </p>
             </div>
           </div>
           <div>
