@@ -1,209 +1,264 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import axios from "axios";
 
-export const fetchProductsByFilters = createAsyncThunk(
-  "products/fetchByFilters",
-  async ({
-    collection,
-    size,
-    color,
-    gender,
-    minPrice,
-    maxPrice,
-    sortBy,
-    search,
-    category,
-    material,
-    brand,
-    limit,
-  }) => {
-    const query = new URLSearchParams();
-    if (collection && collection !== "all")
-      query.append("collection", collection);
-    if (size) query.append("size", Array.isArray(size) ? size.join(",") : size);
-    if (color)
-      query.append("color", Array.isArray(color) ? color.join(",") : color);
-    if (gender) query.append("gender", gender);
-    if (minPrice) query.append("minPrice", minPrice);
-    if (maxPrice) query.append("maxPrice", maxPrice);
-    if (sortBy) query.append("sortBy", sortBy);
-    if (search) query.append("search", search);
-    if (category && category !== "all") query.append("category", category);
-    if (material)
-      query.append(
-        "material",
-        Array.isArray(material) ? material.join(",") : material
-      );
-    if (brand)
-      query.append("brand", Array.isArray(brand) ? brand.join(",") : brand);
-    if (limit) query.append("limit", limit);
-
-    const response = await axios.get(
-      `${import.meta.env.VITE_BACKEND_URL}/api/products?${query.toString()}`
-    );
-    return response.data;
+const saveCartToStorage = (cart) => {
+  try {
+    localStorage.setItem("cart", JSON.stringify(cart));
+  } catch (error) {
+    console.error("Lỗi khi lưu giỏ hàng vào localStorage:", error.message);
   }
-);
+};
 
-export const fetchProductsDetails = createAsyncThunk(
-  "products/fetchProductDetails",
-  async (id, { rejectWithValue }) => {
+// Lấy giỏ hàng
+export const fetchCart = createAsyncThunk(
+  "cart/fetchCart",
+  async ({ userId, guestId }, { rejectWithValue }) => {
     try {
+      if (!userId && !guestId) {
+        throw new Error("Cần cung cấp userId hoặc guestId");
+      }
       const response = await axios.get(
-        `${import.meta.env.VITE_BACKEND_URL}/api/products/${id}`
+        `${import.meta.env.VITE_BACKEND_URL}/api/cart`,
+        {
+          params: { userId, guestId },
+        }
       );
       return response.data;
     } catch (error) {
       return rejectWithValue(
-        error.response?.data?.message || "Lỗi khi lấy chi tiết sản phẩm"
+        error.response?.data?.message || "Lỗi khi lấy giỏ hàng"
       );
     }
   }
 );
 
-export const updatedProduct = createAsyncThunk(
-  "products/updateProduct",
-  async ({ id, productData }, { rejectWithValue }) => {
+// Thêm sản phẩm vào giỏ hàng
+export const addToCart = createAsyncThunk(
+  "cart/addToCart",
+  async (
+    {
+      productId,
+      quantity,
+      size,
+      color,
+      guestId,
+      userId,
+      name,
+      price,
+      discountPrice,
+      image,
+    },
+    { rejectWithValue }
+  ) => {
     try {
+      if (!productId || !quantity || !size || !color) {
+        throw new Error("Thiếu các trường bắt buộc: productId, quantity, size, color");
+      }
+      if (typeof quantity !== "number" || quantity <= 0) {
+        throw new Error("Số lượng phải là số dương");
+      }
+      const response = await axios.post(
+        `${import.meta.env.VITE_BACKEND_URL}/api/cart`,
+        {
+          productId,
+          quantity,
+          size,
+          color,
+          guestId,
+          userId,
+          name,
+          price,
+          discountPrice,
+          image,
+        },
+        { headers: { "Content-Type": "application/json" } }
+      );
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error.response?.data?.message || "Lỗi khi thêm vào giỏ hàng"
+      );
+    }
+  }
+);
+
+// Cập nhật số lượng sản phẩm trong giỏ hàng
+export const updateCartItemQuantity = createAsyncThunk(
+  "cart/updateCartItemQuantity",
+  async (
+    { productId, quantity, guestId, userId, size, color },
+    { rejectWithValue }
+  ) => {
+    try {
+      if (!productId || !quantity || !size || !color) {
+        throw new Error("Thiếu các trường bắt buộc: productId, quantity, size, color");
+      }
+      if (typeof quantity !== "number" || quantity < 0) {
+        throw new Error("Số lượng phải là số không âm");
+      }
+      const response = await axios.put(
+        `${import.meta.env.VITE_BACKEND_URL}/api/cart`,
+        {
+          productId,
+          quantity,
+          guestId,
+          userId,
+          size,
+          color,
+        },
+        { headers: { "Content-Type": "application/json" } }
+      );
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error.response?.data?.message || "Lỗi khi cập nhật số lượng"
+      );
+    }
+  }
+);
+
+// Xóa sản phẩm khỏi giỏ hàng
+export const removeFromCart = createAsyncThunk(
+  "cart/removeFromCart",
+  async ({ productId, guestId, userId, size, color }, { rejectWithValue }) => {
+    try {
+      if (!productId || !size || !color) {
+        throw new Error("Thiếu các trường bắt buộc: productId, size, color");
+      }
+      const response = await axios.delete(
+        `${import.meta.env.VITE_BACKEND_URL}/api/cart`,
+        {
+          data: { productId, guestId, userId, size, color },
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error.response?.data?.message || "Lỗi khi xóa sản phẩm"
+      );
+    }
+  }
+);
+
+// Hợp nhất giỏ hàng khách với giỏ hàng người dùng
+export const mergeCart = createAsyncThunk(
+  "cart/mergeCart",
+  async ({ guestId }, { rejectWithValue }) => {
+    try {
+      if (!guestId) {
+        throw new Error("Thiếu guestId");
+      }
       const token = localStorage.getItem("userToken");
       if (!token) {
         throw new Error("Không tìm thấy token xác thực");
       }
-      const response = await axios.put(
-        `${import.meta.env.VITE_BACKEND_URL}/api/products/${id}`,
-        productData,
+      const response = await axios.post(
+        `${import.meta.env.VITE_BACKEND_URL}/api/cart/merge`,
+        { guestId },
         {
           headers: {
             Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
           },
         }
       );
       return response.data;
     } catch (error) {
       return rejectWithValue(
-        error.response?.data?.message || "Lỗi khi cập nhật sản phẩm"
+        error.response?.data?.message || "Lỗi khi hợp nhất giỏ hàng"
       );
     }
   }
 );
 
-export const fetchSimilarProducts = createAsyncThunk(
-  "products/fetchSimilarProducts",
-  async ({ id }, { rejectWithValue }) => {
-    try {
-      const response = await axios.get(
-        `${import.meta.env.VITE_BACKEND_URL}/api/products/similar/${id}`
-      );
-      return response.data;
-    } catch (error) {
-      return rejectWithValue(
-        error.response?.data?.message || "Lỗi khi lấy sản phẩm tương tự"
-      );
-    }
-  }
-);
-
-const productsSlice = createSlice({
-  name: "products",
+const cartSlice = createSlice({
+  name: "cart",
   initialState: {
-    products: [],
-    selectedProduct: null,
-    similarProducts: [],
+    cart: { products: [], totalPrice: 0 },
     loading: false,
     error: null,
-    filters: {
-      category: "",
-      size: [],
-      color: [],
-      gender: "",
-      brand: [],
-      minPrice: 0,
-      maxPrice: 10000000,
-      sortBy: "",
-      search: "",
-      material: [],
-      collection: "",
-    },
   },
   reducers: {
-    setFilters: (state, action) => {
-      state.filters = { ...state.filters, ...action.payload };
-    },
-    clearFilter: (state) => {
-      state.filters = {
-        category: "",
-        size: [],
-        color: [],
-        gender: "",
-        brand: [],
-        minPrice: 0,
-        maxPrice: 10000000,
-        sortBy: "",
-        search: "",
-        material: [],
-        collection: "",
-      };
+    clearCart: (state) => {
+      state.cart = { products: [], totalPrice: 0 };
+      localStorage.removeItem("cart");
     },
   },
   extraReducers: (builder) => {
     builder
-      .addCase(fetchProductsByFilters.pending, (state) => {
+      // fetchCart
+      .addCase(fetchCart.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
-      .addCase(fetchProductsByFilters.fulfilled, (state, action) => {
+      .addCase(fetchCart.fulfilled, (state, action) => {
         state.loading = false;
-        state.products = Array.isArray(action.payload) ? action.payload : [];
+        state.cart = action.payload || { products: [], totalPrice: 0 };
+        saveCartToStorage(state.cart);
       })
-      .addCase(fetchProductsByFilters.rejected, (state, action) => {
+      .addCase(fetchCart.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.payload || "Lỗi khi lấy danh sách sản phẩm";
+        state.error = action.payload || "Không thể lấy giỏ hàng";
       })
-      .addCase(fetchProductsDetails.pending, (state) => {
+      // addToCart
+      .addCase(addToCart.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
-      .addCase(fetchProductsDetails.fulfilled, (state, action) => {
+      .addCase(addToCart.fulfilled, (state, action) => {
         state.loading = false;
-        state.selectedProduct = action.payload;
+        state.cart = action.payload || { products: [], totalPrice: 0 };
+        saveCartToStorage(state.cart);
       })
-      .addCase(fetchProductsDetails.rejected, (state, action) => {
+      .addCase(addToCart.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.payload;
+        state.error = action.payload || "Không thể thêm vào giỏ hàng";
       })
-      .addCase(updatedProduct.pending, (state) => {
+      // updateCartItemQuantity
+      .addCase(updateCartItemQuantity.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
-      .addCase(updatedProduct.fulfilled, (state, action) => {
+      .addCase(updateCartItemQuantity.fulfilled, (state, action) => {
         state.loading = false;
-        const updatedProduct = action.payload;
-        const index = state.products.findIndex(
-          (product) => product._id === updatedProduct._id
-        );
-        if (index !== -1) {
-          state.products[index] = updatedProduct;
-        }
-        state.selectedProduct = updatedProduct;
+        state.cart = action.payload || { products: [], totalPrice: 0 };
+        saveCartToStorage(state.cart);
       })
-      .addCase(updatedProduct.rejected, (state, action) => {
+      .addCase(updateCartItemQuantity.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.payload;
+        state.error = action.payload || "Không thể cập nhật số lượng";
       })
-      .addCase(fetchSimilarProducts.pending, (state) => {
+      // removeFromCart
+      .addCase(removeFromCart.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
-      .addCase(fetchSimilarProducts.fulfilled, (state, action) => {
+      .addCase(removeFromCart.fulfilled, (state, action) => {
         state.loading = false;
-        state.similarProducts = action.payload;
+        state.cart = action.payload || { products: [], totalPrice: 0 };
+        saveCartToStorage(state.cart);
       })
-      .addCase(fetchSimilarProducts.rejected, (state, action) => {
+      .addCase(removeFromCart.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.payload;
+        state.error = action.payload || "Không thể xóa sản phẩm";
+      })
+      // mergeCart
+      .addCase(mergeCart.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(mergeCart.fulfilled, (state, action) => {
+        state.loading = false;
+        state.cart = action.payload || { products: [], totalPrice: 0 };
+        saveCartToStorage(state.cart);
+      })
+      .addCase(mergeCart.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload || "Không thể hợp nhất giỏ hàng";
       });
   },
 });
 
-export const { setFilters, clearFilter } = productsSlice.actions;
-export default productsSlice.reducer;
+export const { clearCart } = cartSlice.actions;
+export default cartSlice.reducer;

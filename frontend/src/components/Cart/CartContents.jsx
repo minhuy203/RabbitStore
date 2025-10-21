@@ -9,9 +9,9 @@ import {
 const CartContents = ({ cart = { products: [] }, userId, guestId }) => {
   const dispatch = useDispatch();
 
-  const handleAddToCart = (productId, delta, quantity, size, color) => {
+  const handleAddToCart = (productId, delta, quantity, size, color, countInStock) => {
     const newQuantity = quantity + delta;
-    if (newQuantity >= 1) {
+    if (newQuantity >= 1 && newQuantity <= countInStock) {
       dispatch(
         updateCartItemQuantity({
           productId,
@@ -22,6 +22,8 @@ const CartContents = ({ cart = { products: [] }, userId, guestId }) => {
           color,
         })
       );
+    } else if (newQuantity > countInStock) {
+      alert(`Số lượng tối đa cho sản phẩm này là ${countInStock}`);
     }
   };
 
@@ -30,11 +32,11 @@ const CartContents = ({ cart = { products: [] }, userId, guestId }) => {
   };
 
   if (!cart || !cart.products || cart.products.length === 0) {
-    return <div>Giỏ hàng của bạn đang trống.</div>;
+    return <div className="text-center py-4">Giỏ hàng của bạn đang trống.</div>;
   }
 
   return (
-    <div>
+    <div className="space-y-4">
       {cart.products.map((product, index) => (
         <div
           key={`${product.productId}-${product.size}-${product.color}-${index}`}
@@ -47,9 +49,12 @@ const CartContents = ({ cart = { products: [] }, userId, guestId }) => {
               className="w-20 h-24 object-cover mr-4 rounded"
             />
             <div>
-              <h3>{product.name || "Sản phẩm không xác định"}</h3>
+              <h3 className="text-lg font-medium">{product.name || "Sản phẩm không xác định"}</h3>
               <p className="text-sm text-gray-500">
-                size: {product.size} | color: {product.color}
+                Kích thước: {product.size} | Màu sắc: {product.color}
+              </p>
+              <p className="text-sm text-gray-500">
+                Tồn kho: {product.countInStock || "Không xác định"}
               </p>
               <div className="flex items-center mt-2">
                 <button
@@ -59,10 +64,12 @@ const CartContents = ({ cart = { products: [] }, userId, guestId }) => {
                       -1,
                       product.quantity,
                       product.size,
-                      product.color
+                      product.color,
+                      product.countInStock
                     )
                   }
-                  className="border rounded px-2 py-1 text-xl font-medium"
+                  className="border rounded px-2 py-1 text-xl font-medium disabled:opacity-50"
+                  disabled={product.quantity <= 1}
                 >
                   -
                 </button>
@@ -74,18 +81,20 @@ const CartContents = ({ cart = { products: [] }, userId, guestId }) => {
                       1,
                       product.quantity,
                       product.size,
-                      product.color
+                      product.color,
+                      product.countInStock
                     )
                   }
-                  className="border rounded px-2 py-1 text-xl font-medium"
+                  className="border rounded px-2 py-1 text-xl font-medium disabled:opacity-50"
+                  disabled={product.quantity >= product.countInStock}
                 >
                   +
                 </button>
               </div>
             </div>
           </div>
-          <div>
-            <p>
+          <div className="text-right">
+            <p className="text-lg font-medium">
               {product.discountPrice
                 ? `${product.discountPrice.toLocaleString("vi-VN")} VND`
                 : `${product.price.toLocaleString("vi-VN")} VND`}
@@ -103,8 +112,9 @@ const CartContents = ({ cart = { products: [] }, userId, guestId }) => {
                   product.color
                 )
               }
+              className="mt-2"
             >
-              <RiDeleteBin3Line className="h-6 w-6 mt-2 text-red-600" />
+              <RiDeleteBin3Line className="h-6 w-6 text-red-600" />
             </button>
           </div>
         </div>
