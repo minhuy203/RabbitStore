@@ -23,7 +23,9 @@ export const fetchCart = createAsyncThunk(
       return response.data;
     } catch (error) {
       console.error(error);
-      return rejectWithValue(error.response?.data || "Lỗi khi lấy giỏ hàng");
+      return rejectWithValue(
+        error.response?.data?.message || "Lỗi khi lấy giỏ hàng"
+      );
     }
   }
 );
@@ -57,14 +59,14 @@ export const addToCart = createAsyncThunk(
           userId,
           name,
           price,
-          discountPrice, // Thêm discountPrice vào payload
+          discountPrice,
           image,
         }
       );
       return response.data;
     } catch (error) {
       return rejectWithValue(
-        error.response?.data || "Lỗi khi thêm vào giỏ hàng"
+        error.response?.data?.message || "Lỗi khi thêm vào giỏ hàng"
       );
     }
   }
@@ -91,7 +93,7 @@ export const updateCartItemQuantity = createAsyncThunk(
       return response.data;
     } catch (error) {
       return rejectWithValue(
-        error.response?.data || "Lỗi khi cập nhật số lượng"
+        error.response?.data?.message || "Lỗi khi cập nhật số lượng"
       );
     }
   }
@@ -108,7 +110,9 @@ export const removeFromCart = createAsyncThunk(
       });
       return response.data;
     } catch (error) {
-      return rejectWithValue(error.response?.data || "Lỗi khi xóa sản phẩm");
+      return rejectWithValue(
+        error.response?.data?.message || "Lỗi khi xóa sản phẩm"
+      );
     }
   }
 );
@@ -118,10 +122,9 @@ export const mergeCart = createAsyncThunk(
   async ({ guestId, user }, { rejectWithValue }) => {
     try {
       const response = await axios.post(
-        `${import.meta.env.VITE_BACKEND_URL}/api/cart`,
+        `${import.meta.env.VITE_BACKEND_URL}/api/cart/merge`,
         {
           guestId,
-          user,
         },
         {
           headers: {
@@ -132,7 +135,7 @@ export const mergeCart = createAsyncThunk(
       return response.data;
     } catch (error) {
       return rejectWithValue(
-        error.response?.data || "Lỗi khi hợp nhất giỏ hàng"
+        error.response?.data?.message || "Lỗi khi hợp nhất giỏ hàng"
       );
     }
   }
@@ -164,7 +167,7 @@ const cartSlice = createSlice({
       })
       .addCase(fetchCart.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.payload?.message || "Không thể lấy giỏ hàng";
+        state.error = action.payload;
       })
       .addCase(addToCart.pending, (state) => {
         state.loading = true;
@@ -177,7 +180,7 @@ const cartSlice = createSlice({
       })
       .addCase(addToCart.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.payload?.message || "Không thể thêm vào giỏ hàng";
+        state.error = action.payload;
       })
       .addCase(updateCartItemQuantity.pending, (state) => {
         state.loading = true;
@@ -190,7 +193,7 @@ const cartSlice = createSlice({
       })
       .addCase(updateCartItemQuantity.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.payload?.message || "Không thể cập nhật số lượng";
+        state.error = action.payload;
       })
       .addCase(removeFromCart.pending, (state) => {
         state.loading = true;
@@ -203,7 +206,7 @@ const cartSlice = createSlice({
       })
       .addCase(removeFromCart.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.payload?.message || "Không thể xóa sản phẩm";
+        state.error = action.payload;
       })
       .addCase(mergeCart.pending, (state) => {
         state.loading = true;
@@ -216,7 +219,7 @@ const cartSlice = createSlice({
       })
       .addCase(mergeCart.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.payload?.message || "Không thể hợp nhất giỏ hàng";
+        state.error = action.payload;
       });
   },
 });

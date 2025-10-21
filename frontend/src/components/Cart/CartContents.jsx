@@ -21,11 +21,16 @@ const CartContents = ({ cart = { products: [] }, userId, guestId }) => {
           size,
           color,
         })
-      );
+      )
+        .then(() => {
+          toast.success("Đã cập nhật số lượng!", { duration: 1000 });
+        })
+        .catch((error) => {
+          toast.error("Lỗi khi cập nhật số lượng: " + error.message, { duration: 1000 });
+        });
     } else if (action === "plus" && quantity >= countInStock) {
       toast.error("Số lượng vượt quá tồn kho!", { duration: 1000 });
-    }
-    if (action === "minus" && quantity > 1) {
+    } else if (action === "minus" && quantity > 1) {
       dispatch(
         updateCartItemQuantity({
           productId,
@@ -35,20 +40,32 @@ const CartContents = ({ cart = { products: [] }, userId, guestId }) => {
           size,
           color,
         })
-      );
+      )
+        .then(() => {
+          toast.success("Đã cập nhật số lượng!", { duration: 1000 });
+        })
+        .catch((error) => {
+          toast.error("Lỗi khi cập nhật số lượng: " + error.message, { duration: 1000 });
+        });
     }
   };
 
   const handleRemoveFromCart = (productId, size, color) => {
-    dispatch(removeFromCart({ productId, guestId, userId, size, color }));
+    dispatch(removeFromCart({ productId, guestId, userId, size, color }))
+      .then(() => {
+        toast.success("Đã xóa sản phẩm khỏi giỏ hàng!", { duration: 1000 });
+      })
+      .catch((error) => {
+        toast.error("Lỗi khi xóa sản phẩm: " + error.message, { duration: 1000 });
+      });
   };
 
   if (!cart || !cart.products || cart.products.length === 0) {
-    return <div>Giỏ hàng của bạn đang trống.</div>;
+    return <div className="text-center text-gray-600">Giỏ hàng của bạn đang trống.</div>;
   }
 
   return (
-    <div>
+    <div className="space-y-4">
       {cart.products.map((product, index) => (
         <div
           key={`${product.productId}-${product.size}-${product.color}-${index}`}
@@ -61,11 +78,11 @@ const CartContents = ({ cart = { products: [] }, userId, guestId }) => {
               className="w-20 h-24 object-cover mr-4 rounded"
             />
             <div>
-              <h3>{product.name || "Sản phẩm không xác định"}</h3>
+              <h3 className="text-lg font-semibold">{product.name || "Sản phẩm không xác định"}</h3>
               <p className="text-sm text-gray-500">
-                size: {product.size} | color: {product.color}
+                Kích cỡ: {product.size} | Màu: {product.color}
               </p>
-              <div className="mb-6">
+              <div className="mt-2">
                 <p className="text-gray-700">Số lượng:</p>
                 <div className="flex items-center space-x-4 mt-2">
                   <button
@@ -79,11 +96,11 @@ const CartContents = ({ cart = { products: [] }, userId, guestId }) => {
                         "minus"
                       )
                     }
-                    disabled={product.countInStock === 0}
+                    disabled={product.quantity <= 1 || product.countInStock === 0}
                     className={`px-2 py-1 bg-gray-200 rounded text-lg ${
-                      product.countInStock === 0
+                      product.quantity <= 1 || product.countInStock === 0
                         ? "opacity-50 cursor-not-allowed"
-                        : ""
+                        : "hover:bg-gray-300"
                     }`}
                   >
                     -
@@ -100,11 +117,11 @@ const CartContents = ({ cart = { products: [] }, userId, guestId }) => {
                         "plus"
                       )
                     }
-                    disabled={product.countInStock === 0}
+                    disabled={product.quantity >= product.countInStock || product.countInStock === 0}
                     className={`px-2 py-1 bg-gray-200 rounded text-lg ${
-                      product.countInStock === 0
+                      product.quantity >= product.countInStock || product.countInStock === 0
                         ? "opacity-50 cursor-not-allowed"
-                        : ""
+                        : "hover:bg-gray-300"
                     }`}
                   >
                     +
@@ -116,8 +133,8 @@ const CartContents = ({ cart = { products: [] }, userId, guestId }) => {
               </div>
             </div>
           </div>
-          <div>
-            <p>
+          <div className="text-right">
+            <p className="text-lg font-medium">
               {product.discountPrice
                 ? `${product.discountPrice.toLocaleString("vi-VN")} VND`
                 : `${product.price.toLocaleString("vi-VN")} VND`}
@@ -135,8 +152,10 @@ const CartContents = ({ cart = { products: [] }, userId, guestId }) => {
                   product.color
                 )
               }
+              className="mt-2"
+              title="Xóa sản phẩm"
             >
-              <RiDeleteBin3Line className="h-6 w-6 mt-2 text-red-600" />
+              <RiDeleteBin3Line className="h-6 w-6 text-red-600 hover:text-red-800" />
             </button>
           </div>
         </div>
