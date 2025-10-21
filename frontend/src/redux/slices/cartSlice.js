@@ -1,11 +1,6 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import axios from "axios";
 
-const loadCartFromStorage = () => {
-  const storedCart = localStorage.getItem("cart");
-  return storedCart ? JSON.parse(storedCart) : { products: [] };
-};
-
 const saveCartToStorage = (cart) => {
   localStorage.setItem("cart", JSON.stringify(cart));
 };
@@ -22,7 +17,6 @@ export const fetchCart = createAsyncThunk(
       );
       return response.data;
     } catch (error) {
-      console.error(error);
       return rejectWithValue(error.response?.data || "Lỗi khi lấy giỏ hàng");
     }
   }
@@ -57,7 +51,7 @@ export const addToCart = createAsyncThunk(
           userId,
           name,
           price,
-          discountPrice, // Thêm discountPrice vào payload
+          discountPrice,
           image,
         }
       );
@@ -118,11 +112,8 @@ export const mergeCart = createAsyncThunk(
   async ({ guestId, user }, { rejectWithValue }) => {
     try {
       const response = await axios.post(
-        `${import.meta.env.VITE_BACKEND_URL}/api/cart`,
-        {
-          guestId,
-          user,
-        },
+        `${import.meta.env.VITE_BACKEND_URL}/api/cart/merge`, // Sửa URL endpoint
+        { guestId },
         {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("userToken")}`,
@@ -141,13 +132,13 @@ export const mergeCart = createAsyncThunk(
 const cartSlice = createSlice({
   name: "cart",
   initialState: {
-    cart: loadCartFromStorage(),
+    cart: { products: [], totalPrice: 0 }, // Không dùng localStorage
     loading: false,
     error: null,
   },
   reducers: {
     clearCart: (state) => {
-      state.cart = { products: [] };
+      state.cart = { products: [], totalPrice: 0 };
       localStorage.removeItem("cart");
     },
   },
@@ -211,8 +202,8 @@ const cartSlice = createSlice({
       })
       .addCase(mergeCart.fulfilled, (state, action) => {
         state.loading = false;
-        state.cart = action.payload;
-        saveCartToStorage(action.payload);
+        state.cart = action.payload.cart || action.payload; // Xử lý dữ liệu từ /merge
+        saveCartToStorage(state.cart);
       })
       .addCase(mergeCart.rejected, (state, action) => {
         state.loading = false;

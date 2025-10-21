@@ -14,7 +14,18 @@ const getCart = async (userId, guestId) => {
 };
 
 router.post("/", async (req, res) => {
-  const { productId, quantity, size, color, guestId, userId, name, price, discountPrice, image } = req.body;
+  const {
+    productId,
+    quantity,
+    size,
+    color,
+    guestId,
+    userId,
+    name,
+    price,
+    discountPrice,
+    image,
+  } = req.body;
   try {
     const product = await Product.findById(productId);
     if (!product) {
@@ -26,7 +37,9 @@ router.post("/", async (req, res) => {
     }
 
     if (!product.sizes.includes(size) || !product.colors.includes(color)) {
-      return res.status(400).json({ message: "Kích cỡ hoặc màu sắc không hợp lệ" });
+      return res
+        .status(400)
+        .json({ message: "Kích cỡ hoặc màu sắc không hợp lệ" });
     }
 
     let cart = await getCart(userId, guestId);
@@ -40,7 +53,10 @@ router.post("/", async (req, res) => {
       );
 
       if (productIndex > -1) {
-        if (cart.products[productIndex].quantity + quantity > product.countInStock) {
+        if (
+          cart.products[productIndex].quantity + quantity >
+          product.countInStock
+        ) {
           return res.status(400).json({ message: "Số lượng vượt quá tồn kho" });
         }
         cart.products[productIndex].quantity += quantity;
@@ -96,7 +112,8 @@ router.put("/", async (req, res) => {
   const { productId, quantity, size, color, guestId, userId } = req.body;
   try {
     let cart = await getCart(userId, guestId);
-    if (!cart) return res.status(404).json({ message: "Không tìm thấy giỏ hàng" });
+    if (!cart)
+      return res.status(404).json({ message: "Không tìm thấy giỏ hàng" });
 
     const product = await Product.findById(productId);
     if (!product) {
@@ -108,7 +125,9 @@ router.put("/", async (req, res) => {
     }
 
     if (!product.sizes.includes(size) || !product.colors.includes(color)) {
-      return res.status(400).json({ message: "Kích cỡ hoặc màu sắc không hợp lệ" });
+      return res
+        .status(400)
+        .json({ message: "Kích cỡ hoặc màu sắc không hợp lệ" });
     }
 
     const productIndex = cart.products.findIndex(
@@ -133,7 +152,9 @@ router.put("/", async (req, res) => {
       await cart.save();
       return res.status(200).json(cart);
     } else {
-      return res.status(404).json({ message: "Không tìm thấy sản phẩm trong giỏ hàng" });
+      return res
+        .status(404)
+        .json({ message: "Không tìm thấy sản phẩm trong giỏ hàng" });
     }
   } catch (error) {
     console.error(error);
@@ -145,7 +166,8 @@ router.delete("/", async (req, res) => {
   const { productId, size, color, guestId, userId } = req.body;
   try {
     let cart = await getCart(userId, guestId);
-    if (!cart) return res.status(404).json({ message: "Không tìm thấy giỏ hàng" });
+    if (!cart)
+      return res.status(404).json({ message: "Không tìm thấy giỏ hàng" });
 
     const productIndex = cart.products.findIndex(
       (p) =>
@@ -164,7 +186,9 @@ router.delete("/", async (req, res) => {
       await cart.save();
       return res.status(200).json(cart);
     } else {
-      return res.status(404).json({ message: "Không tìm thấy sản phẩm trong giỏ hàng" });
+      return res
+        .status(404)
+        .json({ message: "Không tìm thấy sản phẩm trong giỏ hàng" });
     }
   } catch (error) {
     console.error(error);
@@ -197,71 +221,110 @@ router.post("/merge", protect, async (req, res) => {
 
     if (guestCart) {
       if (guestCart.products.length === 0) {
-        return res.status(400).json({ message: "Giỏ hàng khách trống" });
+        return res
+          .status(200)
+          .json(userCart || { products: [], totalPrice: 0 });
       }
-      if (userCart) {
-        for (const guestItem of guestCart.products) {
-          const product = await Product.findById(guestItem.productId);
-          if (!product) continue;
-          if (guestItem.quantity > product.countInStock) {
-            return res.status(400).json({ message: `Số lượng ${guestItem.name} vượt quá tồn kho` });
-          }
-          if (!product.sizes.includes(guestItem.size) || !product.colors.includes(guestItem.color)) {
-            return res.status(400).json({ message: `Kích cỡ hoặc màu sắc của ${guestItem.name} không hợp lệ` });
-          }
-          const productIndex = userCart.products.findIndex(
-            (item) =>
-              item.productId.toString() === guestItem.productId.toString() &&
-              item.size === guestItem.size &&
-              item.color === guestItem.color
-          );
-          if (productIndex > -1) {
-            if (userCart.products[productIndex].quantity + guestItem.quantity > product.countInStock) {
-              return res.status(400).json({ message: `Số lượng ${guestItem.name} vượt quá tồn kho` });
-            }
-            userCart.products[productIndex].quantity += guestItem.quantity;
-            userCart.products[productIndex].countInStock = product.countInStock;
-          } else {
-            userCart.products.push({
-              ...guestItem.toObject(),
-              countInStock: product.countInStock,
-            });
-          }
+
+      let mergedProducts = userCart ? [...userCart.products] : [];
+
+      for (const guestItem of guestCart.products) {
+        const product = await Product.findById(guestItem.productId);
+        if (
+          !product ||
+          guestItem.quantity > product.countInStock ||
+          !product.sizes.includes(guestItem.size) ||
+          !product.colors.includes(guestItem.color)
+        ) {
+          continue; // Bỏ qua sản phẩm không hợp lệ
         }
 
+        const productIndex = mergedProducts.findIndex(
+          (item) =>
+            item.productId.toString() === guestItem.productId.toString() &&
+            item.size === guestItem.size &&
+            item.color === guestItem.color
+        );
+
+        if (productIndex > -1) {
+          if (
+            mergedProducts[productIndex].quantity + guestItem.quantity >
+            product.countInStock
+          ) {
+            continue;
+          }
+          mergedProducts[productIndex].quantity += guestItem.quantity;
+          mergedProducts[productIndex].countInStock = product.countInStock;
+        } else {
+          mergedProducts.push({
+            ...guestItem.toObject(),
+            countInStock: product.countInStock,
+          });
+        }
+      }
+
+      let finalCart;
+      if (userCart) {
+        userCart.products = mergedProducts;
         userCart.totalPrice = userCart.products.reduce(
-          (acc, item) => acc + (item.discountPrice || item.price) * item.quantity,
+          (acc, item) =>
+            acc + (item.discountPrice || item.price) * item.quantity,
           0
         );
-        await userCart.save();
-
-        try {
-          await Cart.findOneAndDelete({ guestId });
-        } catch (error) {
-          console.error("Lỗi khi xóa giỏ hàng khách:", error);
-        }
-        res.status(200).json(userCart);
+        finalCart = await userCart.save();
       } else {
-        guestCart.user = req.user._id;
-        guestCart.guestId = undefined;
-        for (const item of guestCart.products) {
-          const product = await Product.findById(item.productId);
-          if (product) {
-            if (!product.sizes.includes(item.size) || !product.colors.includes(item.color)) {
-              return res.status(400).json({ message: `Kích cỡ hoặc màu sắc của ${item.name} không hợp lệ` });
-            }
-            item.countInStock = product.countInStock;
-          }
-        }
-        await guestCart.save();
-        res.status(200).json(guestCart);
+        const newCart = await Cart.create({
+          user: req.user._id,
+          products: mergedProducts,
+          totalPrice: mergedProducts.reduce(
+            (acc, item) =>
+              acc + (item.discountPrice || item.price) * item.quantity,
+            0
+          ),
+        });
+        finalCart = newCart;
       }
+
+      await Cart.findOneAndDelete({ guestId });
+      return res.status(200).json(finalCart);
     } else {
-      if (userCart) {
-        return res.status(200).json(userCart);
-      }
-      res.status(404).json({ message: "Không tìm thấy giỏ hàng khách" });
+      return res.status(200).json(userCart || { products: [], totalPrice: 0 });
     }
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: "Lỗi server" });
+  }
+});
+
+router.post("/clean-guest-cart", async (req, res) => {
+  const { guestId } = req.body;
+  try {
+    let cart = await Cart.findOne({ guestId });
+    if (!cart) return res.status(200).json({ products: [], totalPrice: 0 });
+
+    const validProducts = [];
+    for (const item of cart.products) {
+      const product = await Product.findById(item.productId);
+      if (
+        product &&
+        product.sizes.includes(item.size) &&
+        product.colors.includes(item.color) &&
+        item.quantity <= product.countInStock
+      ) {
+        validProducts.push({
+          ...item.toObject(),
+          countInStock: product.countInStock,
+        });
+      }
+    }
+
+    cart.products = validProducts;
+    cart.totalPrice = cart.products.reduce(
+      (acc, item) => acc + (item.discountPrice || item.price) * item.quantity,
+      0
+    );
+    await cart.save();
+    return res.status(200).json(cart);
   } catch (error) {
     console.error(error);
     return res.status(500).json({ message: "Lỗi server" });
