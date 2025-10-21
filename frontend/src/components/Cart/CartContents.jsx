@@ -5,13 +5,25 @@ import {
   removeFromCart,
   updateCartItemQuantity,
 } from "../../redux/slices/cartSlice";
+import { toast } from "sonner";
 
 const CartContents = ({ cart = { products: [] }, userId, guestId }) => {
   const dispatch = useDispatch();
 
-  const handleAddToCart = (productId, delta, quantity, size, color) => {
+  const handleAddToCart = (
+    productId,
+    delta,
+    quantity,
+    size,
+    color,
+    countInStock
+  ) => {
     const newQuantity = quantity + delta;
     if (newQuantity >= 1) {
+      if (delta > 0 && newQuantity > countInStock) {
+        toast.error("Số lượng vượt quá tồn kho!", { duration: 1000 });
+        return;
+      }
       dispatch(
         updateCartItemQuantity({
           productId,
@@ -59,7 +71,8 @@ const CartContents = ({ cart = { products: [] }, userId, guestId }) => {
                       -1,
                       product.quantity,
                       product.size,
-                      product.color
+                      product.color,
+                      product.countInStock
                     )
                   }
                   className="border rounded px-2 py-1 text-xl font-medium"
@@ -74,7 +87,8 @@ const CartContents = ({ cart = { products: [] }, userId, guestId }) => {
                       1,
                       product.quantity,
                       product.size,
-                      product.color
+                      product.color,
+                      product.countInStock
                     )
                   }
                   className="border rounded px-2 py-1 text-xl font-medium"
@@ -82,6 +96,9 @@ const CartContents = ({ cart = { products: [] }, userId, guestId }) => {
                   +
                 </button>
               </div>
+              <p className="text-sm text-gray-600 mt-2">
+                Còn {product.countInStock} sản phẩm trong kho
+              </p>
             </div>
           </div>
           <div>
