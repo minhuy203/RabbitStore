@@ -153,6 +153,18 @@ const cartSlice = createSlice({
       state.cart = { products: [] };
       localStorage.removeItem("cart");
     },
+    updateCartItemQuantitySync: (state, action) => {
+      const { productId, size, color, quantity } = action.payload;
+      const productIndex = state.cart.products.findIndex(
+        (p) =>
+          p.productId.toString() === productId &&
+          p.size === size &&
+          p.color === color
+      );
+      if (productIndex > -1) {
+        state.cart.products[productIndex].quantity = quantity;
+      }
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -224,5 +236,5 @@ const cartSlice = createSlice({
   },
 });
 
-export const { clearCart } = cartSlice.actions;
+export const { clearCart, updateCartItemQuantitySync } = cartSlice.actions;
 export default cartSlice.reducer;

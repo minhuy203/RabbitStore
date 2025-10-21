@@ -4,6 +4,7 @@ import { useDispatch } from "react-redux";
 import {
   removeFromCart,
   updateCartItemQuantity,
+  updateCartItemQuantitySync,
 } from "../../redux/slices/cartSlice";
 import { toast } from "sonner";
 
@@ -11,43 +12,48 @@ const CartContents = ({ cart = { products: [] }, userId, guestId }) => {
   const dispatch = useDispatch();
 
   const handleQuantityChange = (productId, size, color, quantity, countInStock, action) => {
-    if (action === "plus" && quantity < countInStock) {
-      dispatch(
-        updateCartItemQuantity({
-          productId,
-          quantity: quantity + 1,
-          guestId,
-          userId,
-          size,
-          color,
-        })
-      )
-        .then(() => {
-          toast.success("Đã cập nhật số lượng!", { duration: 1000 });
-        })
-        .catch((error) => {
-          toast.error("Lỗi khi cập nhật số lượng: " + error.message, { duration: 1000 });
-        });
-    } else if (action === "plus" && quantity >= countInStock) {
-      toast.error("Số lượng vượt quá tồn kho!", { duration: 1000 });
-    } else if (action === "minus" && quantity > 1) {
-      dispatch(
-        updateCartItemQuantity({
-          productId,
-          quantity: quantity - 1,
-          guestId,
-          userId,
-          size,
-          color,
-        })
-      )
-        .then(() => {
-          toast.success("Đã cập nhật số lượng!", { duration: 1000 });
-        })
-        .catch((error) => {
-          toast.error("Lỗi khi cập nhật số lượng: " + error.message, { duration: 1000 });
-        });
+    const newQuantity = action === "plus" ? quantity + 1 : quantity - 1;
+
+    // Kiểm tra giới hạn số lượng
+    if (action === "plus" && quantity >= countInStock) {
+      return; // Không làm gì nếu vượt quá tồn kho
     }
+    if (action === "minus" && quantity <= 1) {
+      return; // Không làm gì nếu số lượng nhỏ hơn hoặc bằng 1
+    }
+
+    // Cập nhật giao diện ngay lập tức
+    dispatch(
+      updateCartItemQuantitySync({
+        productId,
+        size,
+        color,
+        quantity: newQuantity,
+      })
+    );
+
+    // Gửi yêu cầu API và xử lý lỗi
+    dispatch(
+      updateCartItemQuantity({
+        productId,
+        quantity: newQuantity,
+        guestId,
+        userId,
+        size,
+        color,
+      })
+    ).catch((error) => {
+      // Rollback nếu API thất bại
+      dispatch(
+        updateCartItemQuantitySync({
+          productId,
+          size,
+          color,
+          quantity, // Hoàn nguyên về số lượng cũ
+        })
+      );
+      toast.error("Lỗi khi cập nhật số lượng: " + error.message, { duration: 1000 });
+    });
   };
 
   const handleRemoveFromCart = (productId, size, color) => {
