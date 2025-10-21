@@ -1,13 +1,28 @@
+import React, { useEffect } from "react";
 import { IoMdClose } from "react-icons/io";
-import CartContents from "../Cart/CartContents";
 import { useNavigate } from "react-router-dom";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
+import { fetchCart } from "../../redux/slices/cartSlice";
+import CartContents from "../Cart/CartContents";
 
 const CartDrawer = ({ drawerOpen, toggleCartDrawer }) => {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const { user, guestId } = useSelector((state) => state.auth);
-  const { cart } = useSelector((state) => state.cart);
+  const { cart, loading, error } = useSelector((state) => state.cart);
   const userId = user ? user._id : null;
+  const currentGuestId = guestId || localStorage.getItem("guestId") || "guest_" + new Date().getTime();
+
+  useEffect(() => {
+    if (drawerOpen) {
+      // Lưu guestId vào localStorage nếu chưa có
+      if (!guestId && !userId) {
+        localStorage.setItem("guestId", currentGuestId);
+      }
+      // Gọi fetchCart khi mở drawer
+      dispatch(fetchCart({ userId: userId || undefined, guestId: userId ? undefined : currentGuestId }));
+    }
+  }, [drawerOpen, userId, currentGuestId, dispatch]);
 
   const handleCheckout = () => {
     toggleCartDrawer();
@@ -17,6 +32,7 @@ const CartDrawer = ({ drawerOpen, toggleCartDrawer }) => {
       navigate("/checkout");
     }
   };
+
   return (
     <div
       className={`fixed top-0 right-0 w-3/4 sm:w-1/2 md:w-[30rem] h-full bg-white shadow-lg transform transition-transform duration-300 flex flex-col z-50 ${
@@ -29,24 +45,24 @@ const CartDrawer = ({ drawerOpen, toggleCartDrawer }) => {
           <IoMdClose className="h-6 w-6 text-gray-600" />
         </button>
       </div>
-      {/* cart contents wwith scrollable area */}
+      {/* cart contents with scrollable area */}
       <div className="flex-grow p-4 overflow-y-auto">
         <h2 className="text-xl font-semibold mb-4">Giỏ hàng của bạn</h2>
+        {loading && <p>Đang tải giỏ hàng...</p>}
+        {error && <p className="text-red-500 mb-4">{error}</p>}
         {cart && cart?.products?.length > 0 ? (
-          <CartContents cart={cart} userId={userId} guestId={guestId} />
+          <CartContents cart={cart} userId={userId} guestId={userId ? null : currentGuestId} />
         ) : (
           <p>Giỏ hàng của bạn đang trống.</p>
         )}
       </div>
-
       {/* checkout button fixed at the bottom */}
       <div className="p-4 bg-white sticky bottom-0">
         {cart && cart?.products?.length > 0 && (
           <>
             <button
               onClick={handleCheckout}
-              className="w-full bg-black text-white py-3 rounded-lg font-semibold hover:bg-gray-800
-        transition"
+              className="w-full bg-black text-white py-3 rounded-lg font-semibold hover:bg-gray-800 transition"
             >
               Thanh toán
             </button>
@@ -59,4 +75,5 @@ const CartDrawer = ({ drawerOpen, toggleCartDrawer }) => {
     </div>
   );
 };
+
 export default CartDrawer;
