@@ -1,8 +1,8 @@
-import React, { useEffect, useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import login from "../assets/login.webp";
 import { loginUser, clearError } from "../redux/slices/authSlice";
-import { mergeCart } from "../redux/slices/cartSlice";
+import { fetchCart, mergeCart } from "../redux/slices/cartSlice";
 import { useDispatch, useSelector } from "react-redux";
 
 const Login = () => {
@@ -12,22 +12,60 @@ const Login = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, guestId, error } = useSelector((state) => state.auth);
-  const { cart } = useSelector((state) => state.cart);
+  const { cart, error: cartError } = useSelector((state) => state.cart);
 
   const redirect = new URLSearchParams(location.search).get("redirect") || "/";
   const isCheckoutRedirect = redirect.includes("checkout");
 
   useEffect(() => {
+    // Đảm bảo guestId tồn tại
+    let currentGuestId = guestId || localStorage.getItem("guestId");
+    if (!currentGuestId) {
+      currentGuestId = "guest_" + new Date().getTime();
+      localStorage.setItem("guestId", currentGuestId);
+    }
+
     if (user) {
-      if (cart?.products.length > 0 && guestId) {
-        dispatch(mergeCart({ guestId, user })).then(() => {
-          navigate(isCheckoutRedirect ? "/checkout" : "/");
-        });
+      // Gọi mergeCart nếu có guestId và giỏ hàng không rỗng
+      if (currentGuestId && cart?.products?.length > 0) {
+        dispatch(mergeCart({ guestId: currentGuestId }))
+          .unwrap()
+          .then(() => {
+            // Lấy giỏ hàng người dùng sau khi hợp nhất
+            dispatch(fetchCart({ userId: user._id }))
+              .unwrap()
+              .then(() => {
+                navigate(isCheckoutRedirect ? "/checkout" : "/");
+              })
+              .catch((err) => {
+                console.error("Lỗi khi lấy giỏ hàng:", err);
+              });
+          })
+          .catch((err) => {
+            console.error("Lỗi khi hợp nhất giỏ hàng:", err);
+            // Vẫn lấy giỏ hàng người dùng nếu hợp nhất thất bại
+            dispatch(fetchCart({ userId: user._id }))
+              .unwrap()
+              .then(() => {
+                navigate(isCheckoutRedirect ? "/checkout" : "/");
+              })
+              .catch((err) => {
+                console.error("Lỗi khi lấy giỏ hàng:", err);
+              });
+          });
       } else {
-        navigate(isCheckoutRedirect ? "/checkout" : "/");
+        // Lấy giỏ hàng người dùng nếu không có giỏ hàng khách
+        dispatch(fetchCart({ userId: user._id }))
+          .unwrap()
+          .then(() => {
+            navigate(isCheckoutRedirect ? "/checkout" : "/");
+          })
+          .catch((err) => {
+            console.error("Lỗi khi lấy giỏ hàng:", err);
+          });
       }
     }
-  }, [user, guestId, cart, navigate, isCheckoutRedirect, dispatch]);
+  }, [user, cart, guestId, navigate, isCheckoutRedirect, dispatch]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -53,6 +91,9 @@ const Login = () => {
               Thông tin đăng nhập không đúng!
             </p>
           )}
+          {cartError && (
+            <p className="text-red-500 text-center mb-4">{cartError}</p>
+          )}
           <div className="mb-4">
             <label className="block text-sm font-semibold mb-2">Email</label>
             <input
@@ -64,6 +105,7 @@ const Login = () => {
               }}
               className="w-full p-2 border rounded"
               placeholder="Nhập địa chỉ email"
+              required
             />
           </div>
           <div className="mb-4">
@@ -77,6 +119,7 @@ const Login = () => {
               }}
               className="w-full p-2 border rounded"
               placeholder="Nhập mật khẩu của bạn"
+              required
             />
           </div>
           <button
