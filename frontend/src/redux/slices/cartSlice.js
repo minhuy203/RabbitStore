@@ -1,5 +1,6 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import axios from "axios";
+import { toast } from "sonner";
 
 const loadCartFromStorage = () => {
   const storedCart = localStorage.getItem("cart");
@@ -22,7 +23,6 @@ export const fetchCart = createAsyncThunk(
       );
       return response.data;
     } catch (error) {
-      console.error(error);
       return rejectWithValue(error.response?.data?.message || "Lỗi khi lấy giỏ hàng");
     }
   }
@@ -43,7 +43,7 @@ export const addToCart = createAsyncThunk(
       discountPrice,
       image,
     },
-    { rejectWithValue }
+    { rejectWithValue, dispatch }
   ) => {
     try {
       const response = await axios.post(
@@ -61,6 +61,7 @@ export const addToCart = createAsyncThunk(
           image,
         }
       );
+      dispatch(fetchCart({ userId, guestId }));
       return response.data;
     } catch (error) {
       return rejectWithValue(
@@ -188,6 +189,7 @@ const cartSlice = createSlice({
         state.loading = false;
         state.cart = action.payload;
         saveCartToStorage(action.payload);
+        toast.success("Sản phẩm đã được thêm vào giỏ!", { duration: 1000 });
       })
       .addCase(addToCart.rejected, (state, action) => {
         state.loading = false;

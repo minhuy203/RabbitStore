@@ -1,6 +1,6 @@
 import React from "react";
 import { RiDeleteBin3Line } from "react-icons/ri";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import {
   removeFromCart,
   updateCartItemQuantity,
@@ -10,11 +10,11 @@ import { toast } from "sonner";
 
 const CartContents = ({ cart = { products: [] }, userId, guestId }) => {
   const dispatch = useDispatch();
+  const { loading } = useSelector((state) => state.cart);
 
   const handleQuantityChange = (productId, size, color, quantity, countInStock, action) => {
     const newQuantity = action === "plus" ? quantity + 1 : quantity - 1;
 
-    // Kiểm tra giới hạn số lượng
     if (action === "plus" && quantity >= countInStock) {
       return;
     }
@@ -22,10 +22,8 @@ const CartContents = ({ cart = { products: [] }, userId, guestId }) => {
       return;
     }
 
-    // Lưu số lượng hiện tại để rollback nếu cần
     const originalQuantity = quantity;
 
-    // Cập nhật giao diện ngay lập tức
     dispatch(
       updateCartItemQuantitySync({
         productId,
@@ -35,7 +33,6 @@ const CartContents = ({ cart = { products: [] }, userId, guestId }) => {
       })
     );
 
-    // Gửi yêu cầu API
     dispatch(
       updateCartItemQuantity({
         productId,
@@ -46,7 +43,6 @@ const CartContents = ({ cart = { products: [] }, userId, guestId }) => {
         color,
       })
     ).catch((error) => {
-      // Rollback nếu API thất bại
       dispatch(
         updateCartItemQuantitySync({
           productId,
@@ -105,14 +101,14 @@ const CartContents = ({ cart = { products: [] }, userId, guestId }) => {
                         "minus"
                       )
                     }
-                    disabled={product.quantity <= 1 || product.countInStock === 0}
+                    disabled={loading || product.quantity <= 1 || product.countInStock === 0}
                     className={`px-2 py-1 bg-gray-200 rounded text-lg ${
-                      product.quantity <= 1 || product.countInStock === 0
+                      loading || product.quantity <= 1 || product.countInStock === 0
                         ? "opacity-50 cursor-not-allowed"
                         : "hover:bg-gray-300"
                     }`}
                   >
-                    -
+                    {loading ? "..." : "-"}
                   </button>
                   <span className="text-lg">{product.quantity}</span>
                   <button
@@ -126,14 +122,14 @@ const CartContents = ({ cart = { products: [] }, userId, guestId }) => {
                         "plus"
                       )
                     }
-                    disabled={product.quantity >= product.countInStock || product.countInStock === 0}
+                    disabled={loading || product.quantity >= product.countInStock || product.countInStock === 0}
                     className={`px-2 py-1 bg-gray-200 rounded text-lg ${
-                      product.quantity >= product.countInStock || product.countInStock === 0
+                      loading || product.quantity >= product.countInStock || product.countInStock === 0
                         ? "opacity-50 cursor-not-allowed"
                         : "hover:bg-gray-300"
                     }`}
                   >
-                    +
+                    {loading ? "..." : "+"}
                   </button>
                   <span className="text-gray-600 text-sm ml-4">
                     Còn {product.countInStock} sản phẩm trong kho
@@ -161,7 +157,8 @@ const CartContents = ({ cart = { products: [] }, userId, guestId }) => {
                   product.color
                 )
               }
-              className="mt-2"
+              disabled={loading}
+              className={`mt-2 ${loading ? "opacity-50 cursor-not-allowed" : ""}`}
               title="Xóa sản phẩm"
             >
               <RiDeleteBin3Line className="h-6 w-6 text-red-600 hover:text-red-800" />

@@ -13,15 +13,15 @@ const ProductDetails = ({ productId }) => {
   const { id } = useParams();
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { selectedProduct, loading, error, similarProducts } = useSelector(
+  const { selectedProduct, loading: productLoading, error: productError } = useSelector(
     (state) => state.products
   );
   const { user, guestId } = useSelector((state) => state.auth);
+  const { loading: cartLoading } = useSelector((state) => state.cart);
   const [mainImage, setMainImage] = useState("");
   const [selectedSize, setSelectedSize] = useState("");
   const [selectedColor, setSelectedColor] = useState("");
   const [quantity, setQuantity] = useState(1);
-  const [isButtonDisabled, setIsButtonDisabled] = useState(false);
 
   const colorMap = {
     Trắng: "#FFFFFF",
@@ -74,7 +74,6 @@ const ProductDetails = ({ productId }) => {
       });
       return;
     }
-    setIsButtonDisabled(true);
 
     dispatch(
       addToCart({
@@ -89,19 +88,11 @@ const ProductDetails = ({ productId }) => {
         discountPrice: selectedProduct.discountPrice || null,
         image: mainImage,
       })
-    )
-      .then(() => {
-        toast.success("Sản phẩm đã được thêm vào giỏ!", { duration: 1000 });
-        dispatch(fetchCart({ userId: user?._id, guestId }));
-      })
-      .catch((error) => {
-        toast.error("Lỗi khi thêm vào giỏ hàng: " + error.message, {
-          duration: 1000,
-        });
-      })
-      .finally(() => {
-        setIsButtonDisabled(false);
+    ).catch((error) => {
+      toast.error("Lỗi khi thêm vào giỏ hàng: " + error.message, {
+        duration: 1000,
       });
+    });
   };
 
   const handleBuyNow = () => {
@@ -141,15 +132,14 @@ const ProductDetails = ({ productId }) => {
       });
   };
 
-  if (loading) return <p>Đang tải...</p>;
-  if (error) return <p>Lỗi: {error}</p>;
+  if (productLoading) return <p>Đang tải...</p>;
+  if (productError) return <p>Lỗi: {productError}</p>;
 
   return (
     <div className="p-6">
       {selectedProduct && (
         <div className="max-w-6xl mx-auto bg-white p-8 rounded-lg">
           <div className="flex flex-col md:flex-row">
-            {/* thumbnails */}
             <div className="hidden md:flex flex-col space-y-4 mr-6">
               {selectedProduct.images.map((image, index) => (
                 <img
@@ -163,7 +153,6 @@ const ProductDetails = ({ productId }) => {
                 />
               ))}
             </div>
-            {/* main image */}
             <div className="md:w-1/2">
               <img
                 src={mainImage}
@@ -171,7 +160,6 @@ const ProductDetails = ({ productId }) => {
                 className="w-full h-auto object-cover rounded-lg mb-4"
               />
             </div>
-            {/* right side */}
             <div className="md:w-1/2 md:ml-10">
               <h1 className="text-2xl md:text-3xl font-semibold mb-2">
                 {selectedProduct.name}
@@ -182,16 +170,10 @@ const ProductDetails = ({ productId }) => {
               </p>
               <p className="text-xl text-red-500 font-semibold mb-2">
                 {selectedProduct.discountPrice
-                  ? `${selectedProduct.discountPrice.toLocaleString(
-                      "vi-VN"
-                    )} VND`
+                  ? `${selectedProduct.discountPrice.toLocaleString("vi-VN")} VND`
                   : `${selectedProduct.price.toLocaleString("vi-VN")} VND`}
               </p>
-              <p className="text-gray-600 mb-4">
-                {selectedProduct.description}
-              </p>
-
-              {/* chọn màu */}
+              <p className="text-gray-600 mb-4">{selectedProduct.description}</p>
               <div className="mb-4">
                 <p className="text-gray-700">Màu:</p>
                 <div className="flex gap-2 mt-2">
@@ -220,8 +202,6 @@ const ProductDetails = ({ productId }) => {
                   ))}
                 </div>
               </div>
-
-              {/* chọn size */}
               <div className="mb-4">
                 <p className="text-gray-700">Kích cỡ:</p>
                 <div className="flex gap-2 mt-2">
@@ -246,18 +226,16 @@ const ProductDetails = ({ productId }) => {
                   ))}
                 </div>
               </div>
-
-              {/* số lượng */}
               <div className="mb-6">
                 <p className="text-gray-700">Số lượng:</p>
                 <div className="flex items-center space-x-4 mt-2">
                   <button
                     onClick={() => handleQuantityChange("minus")}
-                    disabled={selectedProduct.countInStock === 0}
+                    disabled={quantity <= 1 || selectedProduct.countInStock === 0}
                     className={`px-2 py-1 bg-gray-200 rounded text-lg ${
-                      selectedProduct.countInStock === 0
+                      quantity <= 1 || selectedProduct.countInStock === 0
                         ? "opacity-50 cursor-not-allowed"
-                        : ""
+                        : "hover:bg-gray-300"
                     }`}
                   >
                     -
@@ -265,11 +243,11 @@ const ProductDetails = ({ productId }) => {
                   <span className="text-lg">{quantity}</span>
                   <button
                     onClick={() => handleQuantityChange("plus")}
-                    disabled={selectedProduct.countInStock === 0}
+                    disabled={quantity >= selectedProduct.countInStock || selectedProduct.countInStock === 0}
                     className={`px-2 py-1 bg-gray-200 rounded text-lg ${
-                      selectedProduct.countInStock === 0
+                      quantity >= selectedProduct.countInStock || selectedProduct.countInStock === 0
                         ? "opacity-50 cursor-not-allowed"
-                        : ""
+                        : "hover:bg-gray-300"
                     }`}
                   >
                     +
@@ -279,40 +257,32 @@ const ProductDetails = ({ productId }) => {
                   </span>
                 </div>
               </div>
-
-              {/* nút thêm vào giỏ */}
               <button
                 onClick={handleAddToCart}
-                disabled={
-                  isButtonDisabled || selectedProduct.countInStock === 0
-                }
+                disabled={cartLoading || selectedProduct.countInStock === 0}
                 className={`bg-black text-white py-2 px-6 rounded w-full mb-4 ${
-                  isButtonDisabled || selectedProduct.countInStock === 0
+                  cartLoading || selectedProduct.countInStock === 0
                     ? "cursor-not-allowed opacity-50"
                     : "hover:bg-gray-900"
                 }`}
               >
                 {selectedProduct.countInStock === 0
                   ? "HẾT HÀNG"
-                  : isButtonDisabled
+                  : cartLoading
                   ? "Đang thêm vào giỏ..."
                   : "THÊM VÀO GIỎ HÀNG"}
               </button>
-
-              {/* nút thanh toán ngay */}
               <button
                 onClick={handleBuyNow}
-                disabled={selectedProduct.countInStock === 0}
+                disabled={cartLoading || selectedProduct.countInStock === 0}
                 className={`bg-green-600 text-white py-2 px-6 rounded w-full mb-6 ${
-                  selectedProduct.countInStock === 0
+                  cartLoading || selectedProduct.countInStock === 0
                     ? "cursor-not-allowed opacity-50"
                     : "hover:bg-green-700"
                 }`}
               >
                 THANH TOÁN NGAY
               </button>
-
-              {/* đặc điểm */}
               <div className="mt-10 text-gray-700">
                 <h3 className="text-xl font-bold mb-4">Đặc điểm</h3>
                 <table className="w-full text-left text-sm text-gray-600">
@@ -330,16 +300,14 @@ const ProductDetails = ({ productId }) => {
               </div>
             </div>
           </div>
-
-          {/* sản phẩm tương tự */}
           <div className="mt-20">
             <h2 className="text-2xl text-center font-medium mb-4">
               Có Thể Bạn Sẽ Thích
             </h2>
             <ProductGrid
-              products={similarProducts}
-              loading={loading}
-              error={error}
+              products={selectedProduct.similarProducts || []}
+              loading={productLoading}
+              error={productError}
             />
           </div>
         </div>
