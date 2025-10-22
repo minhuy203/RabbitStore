@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { Link } from "react-router-dom";
 import Hero from "../components/Layout/Hero";
 import GenderCollectionSection from "../components/Products/GenderCollectionSection";
 import NewArrivals from "../components/Products/NewArrivals";
@@ -54,12 +55,65 @@ const Home = () => {
       {/* Best Sellers */}
       <div className="container mx-auto max-w-[800px] py-6">
         <h2 className="text-2xl text-center font-bold mb-3">Bán Chạy Nhất</h2>
-        <ProductGrid
-          products={topSellers}
-          loading={topSellersLoading}
-          error={topSellersError}
-          gridClass="grid-cols-3 gap-2 justify-items-center"
-        />
+        {topSellersLoading ? (
+          <p className="text-center">Đang tải...</p>
+        ) : topSellersError ? (
+          <p className="text-red-500 text-center">Lỗi: {topSellersError}</p>
+        ) : (
+          <div className="grid grid-cols-3 gap-2 justify-items-center">
+            {Array.isArray(topSellers) && topSellers.length > 0 ? (
+              topSellers.map((product, index) => (
+                <Link
+                  key={index}
+                  to={`/product/${product._id}`}
+                  className="block w-full max-w-[200px]"
+                >
+                  <div className="bg-white p-4 rounded-lg shadow hover:shadow-lg transition">
+                    {/* Ảnh sản phẩm */}
+                    <div className="w-full h-64 mb-3">
+                      <img
+                        src={
+                          product.images?.[0]?.url || "/placeholder-image.jpg"
+                        }
+                        alt={
+                          product.images?.[0]?.altText ||
+                          product.name ||
+                          "Sản phẩm"
+                        }
+                        className="w-full h-full object-cover rounded-lg"
+                      />
+                    </div>
+
+                    {/* Tên sản phẩm */}
+                    <h3 className="text-sm font-medium mb-2 text-gray-900 truncate">
+                      {product.name || "Không có tên"}
+                    </h3>
+
+                    {/* Giá sản phẩm */}
+                    <div className="flex items-center gap-2">
+                      {product.discountPrice ? (
+                        <>
+                          <span className="text-gray-400 line-through text-xs">
+                            {product.price.toLocaleString("vi-VN")} VND
+                          </span>
+                          <span className="text-red-500 font-semibold text-sm">
+                            {product.discountPrice.toLocaleString("vi-VN")} VND
+                          </span>
+                        </>
+                      ) : (
+                        <span className="text-gray-700 font-medium text-sm">
+                          {product.price.toLocaleString("vi-VN")} VND
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </Link>
+              ))
+            ) : (
+              <p className="text-center col-span-3">Không có sản phẩm</p>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Women's Top Clothing */}
