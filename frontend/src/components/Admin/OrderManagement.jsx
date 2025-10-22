@@ -32,6 +32,11 @@ const OrderManagement = () => {
   if (loading) return <p>Đang tải...</p>;
   if (error) return <p className="text-red-500">Lỗi: {error}</p>;
 
+  // Sắp xếp đơn hàng theo createdAt giảm dần
+  const sortedOrders = [...orders].sort(
+    (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+  );
+
   return (
     <div className="max-w-7xl mx-auto p-6">
       <h2 className="text-2xl font-bold mb-6">Quản lý đơn hàng</h2>
@@ -48,8 +53,8 @@ const OrderManagement = () => {
             </tr>
           </thead>
           <tbody>
-            {orders.length > 0 ? (
-              orders.map((order) => (
+            {sortedOrders.length > 0 ? (
+              sortedOrders.map((order) => (
                 <tr
                   key={order._id}
                   className="border-b hover:bg-gray-50 cursor-pointer"

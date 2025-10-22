@@ -81,6 +81,11 @@ const UserManagement = () => {
     }
   };
 
+  // Sắp xếp người dùng theo createdAt giảm dần
+  const sortedUsers = [...users].sort(
+    (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+  );
+
   return (
     <div className="max-w-7xl mx-auto p-6">
       <h2 className="text-2xl font-bold mb-4">Quản lý người dùng</h2>
@@ -155,8 +160,8 @@ const UserManagement = () => {
             </tr>
           </thead>
           <tbody>
-            {users && users.length > 0
-              ? users.map((user) => (
+            {sortedUsers && sortedUsers.length > 0
+              ? sortedUsers.map((user) => (
                   <tr key={user._id} className="border-b hover:bg-gray-50">
                     <td className="p-4 font-medium text-gray-900 whitespace-nowrap">
                       {user.name}

@@ -58,14 +58,16 @@ const AdminHomePage = () => {
   }, []);
 
   useEffect(() => {
-    const filtered = orders.filter((order) => {
-      const orderDate = new Date(order.createdAt);
-      return (
-        orderDate >= dateRange.startDate &&
-        orderDate <= dateRange.endDate &&
-        order.status?.toLowerCase() === "delivered"
-      );
-    });
+    const filtered = orders
+      .filter((order) => {
+        const orderDate = new Date(order.createdAt);
+        return (
+          orderDate >= dateRange.startDate &&
+          orderDate <= dateRange.endDate &&
+          order.status?.toLowerCase() === "delivered"
+        );
+      })
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)); // Sắp xếp giảm dần theo createdAt
 
     const stats = filtered.reduce(
       (acc, order) => ({
