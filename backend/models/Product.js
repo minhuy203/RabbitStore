@@ -102,6 +102,10 @@ const productSchema = new mongoose.Schema(
       height: Number,
     },
     weight: Number,
+    totalSold: {
+      type: Number,
+      default: 0,
+    }, // Thêm trường totalSold
   },
   { timestamps: true }
 );

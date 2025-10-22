@@ -104,13 +104,23 @@ router.get("/", async (req, res) => {
   }
 });
 
-// @route GET /api/products/best-seller
-router.get("/best-seller", async (req, res) => {
+// @route GET /api/products/top-sellers
+// @desc Lấy danh sách sản phẩm bán chạy nhất dựa trên totalSold
+// @access Public
+router.get("/top-sellers", async (req, res) => {
   try {
-    const bestSeller = await Product.findOne().sort({ rating: -1 });
-    if (bestSeller) res.json(bestSeller);
-    else res.status(404).json({ message: "Không tìm thấy sản phẩm bán chạy" });
+    const limit = parseInt(req.query.limit) || 3;
+    const topSellers = await Product.find()
+      .sort({ totalSold: -1 }) // Sắp xếp theo totalSold giảm dần
+      .limit(limit)
+      .select("name price discountPrice images totalSold");
+    if (topSellers.length > 0) {
+      res.json(topSellers);
+    } else {
+      res.status(404).json({ message: "Không tìm thấy sản phẩm bán chạy" });
+    }
   } catch (error) {
+    console.error("Lỗi khi lấy sản phẩm bán chạy:", error);
     res.status(500).json({ message: "Lỗi server", error: error.message });
   }
 });
@@ -151,7 +161,7 @@ router.get("/similar/:id", async (req, res) => {
     if (!product)
       return res.status(404).json({ message: "Không tìm thấy sản phẩm" });
 
-    console.log("Finding similar products for:", product.category, product.gender); // SỬA: Thêm log
+    console.log("Finding similar products for:", product.category, product.gender);
 
     // Thử tìm theo cả gender và category trước
     let similarProducts = await Product.find({
@@ -162,7 +172,7 @@ router.get("/similar/:id", async (req, res) => {
 
     // Nếu không tìm thấy, thử tìm theo category
     if (similarProducts.length === 0 && product.category) {
-      console.log("No products found with gender+category, trying category only"); // SỬA: Thêm log
+      console.log("No products found with gender+category, trying category only");
       similarProducts = await Product.find({
         _id: { $ne: id },
         category: product.category,
@@ -171,7 +181,7 @@ router.get("/similar/:id", async (req, res) => {
 
     // Nếu vẫn không tìm thấy, thử tìm theo gender
     if (similarProducts.length === 0 && product.gender) {
-      console.log("No products found with category, trying gender only"); // SỬA: Thêm log
+      console.log("No products found with category, trying gender only");
       similarProducts = await Product.find({
         _id: { $ne: id },
         gender: product.gender,
@@ -180,13 +190,13 @@ router.get("/similar/:id", async (req, res) => {
 
     // Nếu vẫn không tìm thấy, trả về sản phẩm bất kỳ (trừ sản phẩm hiện tại)
     if (similarProducts.length === 0) {
-      console.log("No similar products found, returning random products"); // SỬA: Thêm log
+      console.log("No similar products found, returning random products");
       similarProducts = await Product.find({
         _id: { $ne: id },
       }).limit(4);
     }
 
-    console.log("Found", similarProducts.length, "similar products"); // SỬA: Thêm log
+    console.log("Found", similarProducts.length, "similar products");
     res.json(similarProducts);
   } catch (error) {
     console.error("Lỗi khi lấy sản phẩm tương tự:", error);

@@ -15,7 +15,9 @@ import axios from "axios";
 const Home = () => {
   const dispatch = useDispatch();
   const { products, loading, error } = useSelector((state) => state.products);
-  const [bestSellerProduct, setBestSellerProduct] = useState(null);
+  const [topSellers, setTopSellers] = useState([]);
+  const [topSellersLoading, setTopSellersLoading] = useState(false);
+  const [topSellersError, setTopSellersError] = useState(null);
 
   useEffect(() => {
     // fetch products for a specific collection
@@ -26,18 +28,23 @@ const Home = () => {
         limit: 8,
       })
     );
-    // fetch best seller product
-    const fetchBestSeller = async () => {
+    // Fetch top 3 best-selling products
+    const fetchTopSellers = async () => {
+      setTopSellersLoading(true);
       try {
         const response = await axios.get(
-          `${import.meta.env.VITE_BACKEND_URL}/api/products/best-seller`
+          `${import.meta.env.VITE_BACKEND_URL}/api/products/top-sellers?limit=3`
         );
-        setBestSellerProduct(response.data);
+        setTopSellers(response.data);
       } catch (error) {
-        console.error(error);
+        setTopSellersError(
+          error.response?.data?.message || "Lỗi khi tải sản phẩm bán chạy"
+        );
+      } finally {
+        setTopSellersLoading(false);
       }
     };
-    fetchBestSeller();
+    fetchTopSellers();
   }, [dispatch]);
 
   return (
@@ -46,13 +53,14 @@ const Home = () => {
       <GenderCollectionSection />
       <NewArrivals />
 
-      {/* best seller */}
-      <h2 className="text-3xl text-center font-bold mb-4">Bán Chạy Nhất</h2>
-      {bestSellerProduct ? (
-        <ProductDetails productId={bestSellerProduct._id} />
-      ) : (
-        <p className="text-center">Đang tải sản phẩm bán chạy nhất...</p>
-      )}
+      <div className="container mx-auto max-w-[1800px]">
+        <h2 className="text-3xl text-center font-bold mb-4">Bán Chạy Nhất</h2>
+        <ProductGrid
+          products={topSellers}
+          loading={topSellersLoading}
+          error={topSellersError}
+        />
+      </div>
 
       <div className="container mx-auto max-w-[1800px]">
         <h2 className="text-3xl text-center font-bold mb-4">
