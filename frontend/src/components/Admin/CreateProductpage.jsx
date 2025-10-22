@@ -1,7 +1,6 @@
-import React, { useEffect, useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
-import { useNavigate, useParams } from "react-router-dom";
-import { fetchProductsDetails } from "../../redux/slices/productSlice";
+import React, { useState } from "react";
+import { useDispatch } from "react-redux";
+import { useNavigate } from "react-router-dom";
 import { createProduct } from "../../redux/slices/adminProductSlice";
 import axios from "axios";
 
@@ -48,11 +47,6 @@ const colorMap = {
 const CreateProductPage = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { id } = useParams();
-
-  const { selectedProduct, loading, error } = useSelector(
-    (state) => state.products
-  );
 
   const [productData, setProductData] = useState({
     name: "",
@@ -73,29 +67,6 @@ const CreateProductPage = () => {
 
   const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState("");
-
-  // Lấy product theo id
-  useEffect(() => {
-    if (id) {
-      dispatch(fetchProductsDetails(id));
-    }
-  }, [dispatch, id]);
-
-  // Set data khi fetch về
-  useEffect(() => {
-    if (selectedProduct) {
-      setProductData({
-        ...selectedProduct,
-        gender:
-          selectedProduct.gender === "male"
-            ? "Nam"
-            : selectedProduct.gender === "female"
-            ? "Nữ"
-            : selectedProduct.gender || "",
-        colors: selectedProduct.colors || [], // Đảm bảo colors là mảng
-      });
-    }
-  }, [selectedProduct]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -127,7 +98,7 @@ const CreateProductPage = () => {
       e.target.value = "";
     } catch (err) {
       console.error("Upload error:", err);
-      setMessage("❌ Upload ảnh thất bại!");
+      setMessage(`❌ Upload ảnh thất bại! Lỗi: ${err.response?.data?.message || err.message}`);
       setTimeout(() => setMessage(""), 3000);
     } finally {
       setUploading(false);
@@ -137,13 +108,28 @@ const CreateProductPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await dispatch(createProduct({ id, productData })).unwrap();
+      // Kiểm tra các trường bắt buộc
+      if (!productData.name || !productData.description || !productData.price || !productData.countInStock || !productData.sku) {
+        setMessage("❌ Vui lòng điền đầy đủ các trường bắt buộc!");
+        setTimeout(() => setMessage(""), 3000);
+        return;
+      }
+
+      // Kiểm tra USER_TOKEN
+      const USER_TOKEN = localStorage.getItem("userToken") ? `Bearer ${localStorage.getItem("userToken")}` : null;
+      if (!USER_TOKEN) {
+        setMessage("❌ Vui lòng đăng nhập lại!");
+        setTimeout(() => setMessage(""), 3000);
+        return;
+      }
+
+      await dispatch(createProduct(productData)).unwrap();
       setMessage("✅ Thêm mới sản phẩm thành công!");
       setTimeout(() => setMessage(""), 3000);
       navigate("/admin/products");
     } catch (err) {
-      console.error("Update error:", err);
-      setMessage("❌ Thêm mới thất bại!");
+      console.error("Create error:", err);
+      setMessage(`❌ Thêm mới thất bại! Lỗi: ${err || "Không xác định"}`);
       setTimeout(() => setMessage(""), 3000);
     }
   };
@@ -152,12 +138,9 @@ const CreateProductPage = () => {
     navigate("/admin/products");
   };
 
-  if (loading) return <p>Đang tải...</p>;
-  if (error) return <p className="text-red-500">Lỗi: {error}</p>;
-
   return (
     <div className="max-w-5xl mx-auto p-6 shadow-md rounded-md">
-      <h2 className="text-3xl font-bold mb-4">Chỉnh sửa sản phẩm</h2>
+      <h2 className="text-3xl font-bold mb-4">Thêm mới sản phẩm</h2>
 
       {message && (
         <div
@@ -211,6 +194,7 @@ const CreateProductPage = () => {
                 }))
               }
               className="w-full border border-gray-300 rounded-md p-2"
+              required
             />
           </div>
           <div>
@@ -237,8 +221,14 @@ const CreateProductPage = () => {
             type="number"
             name="countInStock"
             value={productData.countInStock}
-            onChange={handleChange}
+            onChange={(e) =>
+              setProductData((prev) => ({
+                ...prev,
+                countInStock: Number(e.target.value),
+              }))
+            }
             className="w-full border border-gray-300 rounded-md p-2"
+            required
           />
         </div>
 
@@ -251,6 +241,7 @@ const CreateProductPage = () => {
             value={productData.sku}
             onChange={handleChange}
             className="w-full border border-gray-300 rounded-md p-2"
+            required
           />
         </div>
 
@@ -314,7 +305,10 @@ const CreateProductPage = () => {
             onChange={(e) =>
               setProductData({
                 ...productData,
-                sizes: e.target.value.split(",").map((s) => s.trim()),
+                sizes: e.target.value
+                  .split(",")
+                  .map((s) => s.trim())
+                  .filter((s) => s),
               })
             }
             className="w-full border border-gray-300 rounded-md p-2"
