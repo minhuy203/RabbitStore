@@ -1,6 +1,6 @@
 import React, { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom"; // Thêm Link
 import {
   fetchAllOrders,
   updateOrderStatus,
@@ -60,7 +60,12 @@ const OrderManagement = () => {
                   className="border-b hover:bg-gray-50 cursor-pointer"
                 >
                   <td className="py-4 px-4 font-medium text-gray-900 whitespace-nowrap">
-                    #{order._id}
+                    <Link
+                      to={`/admin/orders/${order._id}`}
+                      className="text-blue-600 hover:underline"
+                    >
+                      #{order._id}
+                    </Link>
                   </td>
                   <td className="p-4">
                     {order.user && order.user.name
@@ -89,7 +94,7 @@ const OrderManagement = () => {
                         order.status === "Delivered"
                       }
                     >
-                      <option value="Processing">Đang xử lí</option>
+                      <option value="Processing">Đang xử lý</option>
                       <option value="Shipped">Đang vận chuyển</option>
                       <option value="Delivered">Đã giao hàng</option>
                       <option value="Cancelled">Hủy đơn</option>

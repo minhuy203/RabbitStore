@@ -17,12 +17,12 @@ import UserManagement from "./components/Admin/UserManagement";
 import ProductManagement from "./components/Admin/ProductManagement";
 import EditProductpage from "./components/Admin/EditProductpage";
 import OrderManagement from "./components/Admin/OrderManagement";
-import CreateProductpage from "./components/Admin/createProductpage";
+import Orderdetailpage from "./components/Admin/Orderdetailpage";
+import createProductpage from "./components/Admin/createProductpage";
 
 import { Provider } from "react-redux";
 import store from "./redux/store";
 import ProtectedRoute from "./components/Common/ProtectedRoute";
-import CreateProductPage from "./components/Admin/createProductpage";
 
 const App = () => {
   console.log("App is rendering");
@@ -66,7 +66,8 @@ const App = () => {
             <Route path="products" element={<ProductManagement />} />
             <Route path="products/:id/edit" element={<EditProductpage />} />
             <Route path="orders" element={<OrderManagement />} />
-            <Route path="products/create" element={<CreateProductPage />} />
+            <Route path="orders/:id" element={<Orderdetailpage />} />
+            <Route path="products/create" element={<createProductpage />} />
 
             <Route />
           </Route>
