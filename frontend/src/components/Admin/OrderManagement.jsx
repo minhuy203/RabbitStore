@@ -70,7 +70,10 @@ const OrderManagement = () => {
                     {order.orderItems?.length > 1 && " ..."}
                   </td>
                   <td className="p-4">
-                    {order.orderItems?.reduce((total, item) => total + (item.quantity || 0), 0) || 0}
+                    {order.orderItems?.reduce(
+                      (total, item) => total + (item.quantity || 0),
+                      0
+                    ) || 0}
                   </td>
                   <td className="p-4">
                     {order.totalPrice?.toLocaleString("vi-VN") || 0} VND
@@ -116,7 +119,7 @@ const OrderManagement = () => {
                       to={`/admin/orders/${order._id}`}
                       className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
                     >
-                      Xem chi tiết
+                      Xem
                     </Link>
                   </td>
                 </tr>
