@@ -20,8 +20,8 @@ const ProductManagement = () => {
   // Xóa sản phẩm
   const handleDelete = async (id) => {
     if (window.confirm("Bạn có chắc muốn xóa sản phẩm không?")) {
-      await dispatch(deleteProduct(id)); // chờ xóa xong
-      dispatch(fetchAdminProducts()); // gọi lại để refresh danh sách
+      await dispatch(deleteProduct(id)); // Chờ xóa xong
+      dispatch(fetchAdminProducts()); // Gọi lại để refresh danh sách
     }
   };
 
@@ -54,6 +54,7 @@ const ProductManagement = () => {
               <th className="py-3 px-4">Tên</th>
               <th className="py-3 px-4">Giá</th>
               <th className="py-3 px-4">Số lượng</th>
+              <th className="py-3 px-4">Số lượng đã bán</th>
               <th className="py-3 px-4">SKU</th>
               <th className="py-3 px-4">Hành động</th>
             </tr>
@@ -72,6 +73,7 @@ const ProductManagement = () => {
                     {product.price?.toLocaleString("vi-VN")} VND
                   </td>
                   <td className="p-4">{product.countInStock ?? 0}</td>
+                  <td className="p-4">{product.totalSold ?? 0}</td>
                   <td className="p-4">{product.sku}</td>
                   <td className="p-4">
                     <Link
@@ -91,7 +93,7 @@ const ProductManagement = () => {
               ))
             ) : (
               <tr>
-                <td colSpan={5} className="p-4 text-center text-gray-500">
+                <td colSpan={6} className="p-4 text-center text-gray-500">
                   Không tìm thấy sản phẩm nào.
                 </td>
               </tr>
