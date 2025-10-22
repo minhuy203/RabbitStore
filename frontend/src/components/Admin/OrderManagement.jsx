@@ -39,6 +39,7 @@ const OrderManagement = () => {
               <th className="py-3 px-4">Tên sản phẩm</th>
               <th className="py-3 px-4">Số lượng</th>
               <th className="py-3 px-4">Tổng giá</th>
+              <th className="py-3 px-4">Trạng thái</th>
               <th className="py-3 px-4">Hành động</th>
             </tr>
           </thead>
@@ -75,6 +76,42 @@ const OrderManagement = () => {
                     {order.totalPrice?.toLocaleString("vi-VN") || 0} VND
                   </td>
                   <td className="p-4">
+                    {(() => {
+                      let label = "Đang xử lý";
+                      let bgClass = "bg-yellow-200 text-yellow-700";
+
+                      switch (order.status) {
+                        case "Processing":
+                          label = "Đang xử lý";
+                          bgClass = "bg-yellow-200 text-yellow-700";
+                          break;
+                        case "Shipped":
+                          label = "Đang vận chuyển";
+                          bgClass = "bg-blue-200 text-blue-700";
+                          break;
+                        case "Delivered":
+                          label = "Đã giao hàng";
+                          bgClass = "bg-green-200 text-green-700";
+                          break;
+                        case "Cancelled":
+                          label = "Đã hủy";
+                          bgClass = "bg-red-200 text-red-700";
+                          break;
+                        default:
+                          label = "Đang xử lý";
+                          bgClass = "bg-yellow-200 text-yellow-700";
+                      }
+
+                      return (
+                        <span
+                          className={`px-2 py-1 rounded-full text-xs font-medium ${bgClass}`}
+                        >
+                          {label}
+                        </span>
+                      );
+                    })()}
+                  </td>
+                  <td className="p-4">
                     <Link
                       to={`/admin/orders/${order._id}`}
                       className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
@@ -86,7 +123,7 @@ const OrderManagement = () => {
               ))
             ) : (
               <tr>
-                <td colSpan={6} className="p-4 text-center text-gray-500">
+                <td colSpan={7} className="p-4 text-center text-gray-500">
                   Không tìm thấy đơn hàng nào.
                 </td>
               </tr>
