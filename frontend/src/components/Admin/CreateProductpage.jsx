@@ -45,7 +45,7 @@ const colorMap = {
   Kaki: "#C3B091",
 };
 
-const EditProductPage = () => {
+const CreateProductPage = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { id } = useParams();
@@ -456,4 +456,4 @@ const EditProductPage = () => {
   );
 };
 
-export default EditProductPage;
+export default CreateProductPage;
