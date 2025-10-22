@@ -39,6 +39,13 @@ const OrderDetailPage = () => {
       <h2 className="text-2xl font-bold mb-6">Chi tiết đơn hàng #{order._id}</h2>
 
       <div className="bg-white shadow-md rounded-lg p-6">
+        {/* Thông tin đơn hàng */}
+        <div className="mb-6">
+          <h3 className="text-lg font-semibold mb-2">Thông tin đơn hàng</h3>
+          <p><strong>Mã đơn hàng:</strong> #{order._id}</p>
+          <p><strong>Ngày tạo:</strong> {new Date(order.createdAt).toLocaleDateString("vi-VN")} {new Date(order.createdAt).toLocaleTimeString("vi-VN")}</p>
+        </div>
+
         {/* Thông tin khách hàng */}
         <div className="mb-6">
           <h3 className="text-lg font-semibold mb-2">Thông tin khách hàng</h3>
