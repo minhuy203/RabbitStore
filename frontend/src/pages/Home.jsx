@@ -52,14 +52,14 @@ const Home = () => {
       <NewArrivals />
 
       {/* Best Sellers */}
-      <div className="container mx-auto max-w-5xl py-6">
+      <div className="container mx-auto max-w-[800px] py-6">
         <h2 className="text-2xl text-center font-bold mb-3">Bán Chạy Nhất</h2>
         <div className="flex justify-center">
           <ProductGrid
             products={topSellers}
             loading={topSellersLoading}
             error={topSellersError}
-            gridClass="grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
+            gridClass="grid-cols-3 gap-2"
           />
         </div>
       </div>
