@@ -1,10 +1,7 @@
 import React, { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { useNavigate, Link } from "react-router-dom"; // Thêm Link
-import {
-  fetchAllOrders,
-  updateOrderStatus,
-} from "../../redux/slices/adminOrderSlice";
+import { useNavigate, Link } from "react-router-dom";
+import { fetchAllOrders } from "../../redux/slices/adminOrderSlice";
 
 const OrderManagement = () => {
   const dispatch = useDispatch();
@@ -20,14 +17,6 @@ const OrderManagement = () => {
       dispatch(fetchAllOrders());
     }
   }, [dispatch, user, navigate]);
-
-  const handleStatusChange = (orderId, status) => {
-    dispatch(updateOrderStatus({ id: orderId, status })).then((action) => {
-      if (action.meta.requestStatus === "fulfilled") {
-        dispatch(fetchAllOrders()); // Đồng bộ dữ liệu sau khi cập nhật
-      }
-    });
-  };
 
   if (loading) return <p>Đang tải...</p>;
   if (error) return <p className="text-red-500">Lỗi: {error}</p>;
@@ -48,7 +37,6 @@ const OrderManagement = () => {
               <th className="py-3 px-4">ID đơn hàng</th>
               <th className="py-3 px-4">Khách hàng</th>
               <th className="py-3 px-4">Tổng giá</th>
-              <th className="py-3 px-4">Trạng thái</th>
               <th className="py-3 px-4">Hành động</th>
             </tr>
           </thead>
@@ -76,54 +64,18 @@ const OrderManagement = () => {
                     {order.totalPrice?.toLocaleString("vi-VN") || 0} VND
                   </td>
                   <td className="p-4">
-                    <select
-                      value={order.status || "Processing"}
-                      onChange={(e) =>
-                        handleStatusChange(order._id, e.target.value)
-                      }
-                      className={`bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 ${
-                        loading ||
-                        order.status === "Cancelled" ||
-                        order.status === "Delivered"
-                          ? "opacity-50 cursor-not-allowed bg-gray-200"
-                          : ""
-                      }`}
-                      disabled={
-                        loading ||
-                        order.status === "Cancelled" ||
-                        order.status === "Delivered"
-                      }
+                    <Link
+                      to={`/admin/orders/${order._id}`}
+                      className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
                     >
-                      <option value="Processing">Đang xử lý</option>
-                      <option value="Shipped">Đang vận chuyển</option>
-                      <option value="Delivered">Đã giao hàng</option>
-                      <option value="Cancelled">Hủy đơn</option>
-                    </select>
-                  </td>
-                  <td className="p-4">
-                    <button
-                      onClick={() => handleStatusChange(order._id, "Delivered")}
-                      className={`bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 ${
-                        loading ||
-                        order.status === "Delivered" ||
-                        order.status === "Cancelled"
-                          ? "opacity-50 cursor-not-allowed bg-gray-400 hover:bg-gray-400"
-                          : ""
-                      }`}
-                      disabled={
-                        loading ||
-                        order.status === "Delivered" ||
-                        order.status === "Cancelled"
-                      }
-                    >
-                      Đánh dấu đã giao hàng
-                    </button>
+                      Xem chi tiết
+                    </Link>
                   </td>
                 </tr>
               ))
             ) : (
               <tr>
-                <td colSpan={5} className="p-4 text-center text-gray-500">
+                <td colSpan={4} className="p-4 text-center text-gray-500">
                   Không tìm thấy đơn hàng nào.
                 </td>
               </tr>

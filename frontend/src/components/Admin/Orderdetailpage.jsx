@@ -30,9 +30,9 @@ const OrderDetailPage = () => {
     });
   };
 
-  if (loading) return <p className="text-center">Đang tải...</p>;
+  if (loading) return <p className="text-center text-gray-500">Đang tải...</p>;
   if (error) return <p className="text-red-500 text-center">Lỗi: {error}</p>;
-  if (!order) return <p className="text-center">Không tìm thấy đơn hàng</p>;
+  if (!order) return <p className="text-center text-gray-500">Không tìm thấy đơn hàng</p>;
 
   return (
     <div className="max-w-7xl mx-auto p-6">
@@ -49,77 +49,106 @@ const OrderDetailPage = () => {
         {/* Địa chỉ giao hàng */}
         <div className="mb-6">
           <h3 className="text-lg font-semibold mb-2">Địa chỉ giao hàng</h3>
-          <p><strong>Địa chỉ:</strong> {order.shippingAddress?.address}</p>
-          <p><strong>Thành phố:</strong> {order.shippingAddress?.city}</p>
+          <p><strong>Địa chỉ:</strong> {order.shippingAddress?.address || "Không có"}</p>
+          <p><strong>Thành phố:</strong> {order.shippingAddress?.city || "Không có"}</p>
         </div>
 
         {/* Thông tin thanh toán */}
         <div className="mb-6">
           <h3 className="text-lg font-semibold mb-2">Thông tin thanh toán</h3>
-          <p><strong>Phương thức:</strong> {order.paymentMethod}</p>
+          <p><strong>Phương thức:</strong> {order.paymentMethod || "Không xác định"}</p>
           <p><strong>Trạng thái:</strong> {order.paymentStatus === "paid" ? "Đã thanh toán" : "Chưa thanh toán"}</p>
-          {order.paidAt && <p><strong>Thời gian thanh toán:</strong> {new Date(order.paidAt).toLocaleString("vi-VN")}</p>}
+          {order.paidAt && (
+            <p><strong>Thời gian thanh toán:</strong> {new Date(order.paidAt).toLocaleString("vi-VN")}</p>
+          )}
         </div>
 
         {/* Trạng thái đơn hàng */}
         <div className="mb-6">
           <h3 className="text-lg font-semibold mb-2">Trạng thái đơn hàng</h3>
-          <select
-            value={order.status || "Processing"}
-            onChange={(e) => handleStatusChange(e.target.value)}
-            className={`bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 ${
-              loading || order.status === "Cancelled" || order.status === "Delivered"
-                ? "opacity-50 cursor-not-allowed bg-gray-200"
-                : ""
-            }`}
-            disabled={loading || order.status === "Cancelled" || order.status === "Delivered"}
-          >
-            <option value="Processing">Đang xử lý</option>
-            <option value="Shipped">Đang vận chuyển</option>
-            <option value="Delivered">Đã giao hàng</option>
-            <option value="Cancelled">Hủy đơn</option>
-          </select>
+          <div className="flex items-center gap-4">
+            <select
+              value={order.status || "Processing"}
+              onChange={(e) => handleStatusChange(e.target.value)}
+              className={`bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 ${
+                loading || order.status === "Cancelled" || order.status === "Delivered"
+                  ? "opacity-50 cursor-not-allowed bg-gray-200"
+                  : ""
+              }`}
+              disabled={loading || order.status === "Cancelled" || order.status === "Delivered"}
+            >
+              <option value="Processing">Đang xử lý</option>
+              <option value="Shipped">Đang vận chuyển</option>
+              <option value="Delivered">Đã giao hàng</option>
+              <option value="Cancelled">Hủy đơn</option>
+            </select>
+            <button
+              onClick={() => handleStatusChange("Delivered")}
+              className={`bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 ${
+                loading || order.status === "Delivered" || order.status === "Cancelled"
+                  ? "opacity-50 cursor-not-allowed bg-gray-400 hover:bg-gray-400"
+                  : ""
+              }`}
+              disabled={loading || order.status === "Delivered" || order.status === "Cancelled"}
+            >
+              Đánh dấu đã giao hàng
+            </button>
+          </div>
         </div>
 
         {/* Danh sách sản phẩm */}
         <div className="mb-6">
           <h3 className="text-lg font-semibold mb-2">Danh sách sản phẩm</h3>
-          <table className="min-w-full text-left text-gray-500">
-            <thead className="bg-gray-100 text-xs uppercase text-gray-700">
-              <tr>
-                <th className="py-3 px-4">Sản phẩm</th>
-                <th className="py-3 px-4">Hình ảnh</th>
-                <th className="py-3 px-4">Kích thước</th>
-                <th className="py-3 px-4">Màu sắc</th>
-                <th className="py-3 px-4">Số lượng</th>
-                <th className="py-3 px-4">Giá</th>
-                <th className="py-3 px-4">Giá giảm</th>
-              </tr>
-            </thead>
-            <tbody>
-              {order.orderItems?.map((item) => (
-                <tr key={item.productId} className="border-b">
-                  <td className="py-4 px-4">{item.name}</td>
-                  <td className="py-4 px-4">
-                    <img src={item.image} alt={item.name} className="w-16 h-16 object-cover" />
-                  </td>
-                  <td className="py-4 px-4">{item.size || "N/A"}</td>
-                  <td className="py-4 px-4">{item.color || "N/A"}</td>
-                  <td className="py-4 px-4">{item.quantity}</td>
-                  <td className="py-4 px-4">{item.price.toLocaleString("vi-VN")} VND</td>
-                  <td className="py-4 px-4">
-                    {item.discountPrice ? item.discountPrice.toLocaleString("vi-VN") : "N/A"} VND
-                  </td>
+          <div className="overflow-x-auto">
+            <table className="min-w-full text-left text-gray-500">
+              <thead className="bg-gray-100 text-xs uppercase text-gray-700">
+                <tr>
+                  <th className="py-3 px-4">Sản phẩm</th>
+                  <th className="py-3 px-4">Hình ảnh</th>
+                  <th className="py-3 px-4">Kích thước</th>
+                  <th className="py-3 px-4">Màu sắc</th>
+                  <th className="py-3 px-4">Số lượng</th>
+                  <th className="py-3 px-4">Giá</th>
+                  <th className="py-3 px-4">Giá giảm</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {order.orderItems?.length > 0 ? (
+                  order.orderItems.map((item) => (
+                    <tr key={item.productId} className="border-b hover:bg-gray-50">
+                      <td className="py-4 px-4">{item.name || "N/A"}</td>
+                      <td className="py-4 px-4">
+                        {item.image ? (
+                          <img src={item.image} alt={item.name} className="w-16 h-16 object-cover rounded" />
+                        ) : (
+                          "Không có hình ảnh"
+                        )}
+                      </td>
+                      <td className="py-4 px-4">{item.size || "N/A"}</td>
+                      <td className="py-4 px-4">{item.color || "N/A"}</td>
+                      <td className="py-4 px-4">{item.quantity || 0}</td>
+                      <td className="py-4 px-4">{item.price?.toLocaleString("vi-VN") || 0} VND</td>
+                      <td className="py-4 px-4">
+                        {item.discountPrice ? item.discountPrice.toLocaleString("vi-VN") : "N/A"} VND
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={7} className="py-4 px-4 text-center text-gray-500">
+                      Không có sản phẩm nào trong đơn hàng
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
 
         {/* Tổng giá */}
         <div className="mb-6">
           <h3 className="text-lg font-semibold mb-2">Tổng giá</h3>
-          <p><strong>Tổng:</strong> {order.totalPrice?.toLocaleString("vi-VN")} VND</p>
+          <p><strong>Tổng:</strong> {order.totalPrice?.toLocaleString("vi-VN") || 0} VND</p>
         </div>
 
         {/* Nút quay lại */}
