@@ -34,7 +34,7 @@ router.get("/", async (req, res) => {
     let query = {};
 
     if (collection && collection.toLowerCase() !== "all") {
-      query.collection = sanitizeQuery(collection);
+      query.collections = sanitizeQuery(collection);
     }
     if (category && category.toLowerCase() !== "all") {
       query.category = sanitizeQuery(category);
@@ -105,12 +105,12 @@ router.get("/", async (req, res) => {
 });
 
 // @route GET /api/products/top-sellers
-// @desc Lấy danh sách sản phẩm bán chạy nhất dựa trên totalSold
+// @desc Lấy danh sách sản phẩm bán chạy nhất dựa trên totalSold từ đơn hàng đã giao
 // @access Public
 router.get("/top-sellers", async (req, res) => {
   try {
     const limit = parseInt(req.query.limit) || 3;
-    const topSellers = await Product.find()
+    const topSellers = await Product.find({ totalSold: { $gt: 0 } })
       .sort({ totalSold: -1 }) // Sắp xếp theo totalSold giảm dần
       .limit(limit)
       .select("name price discountPrice images totalSold");

@@ -53,24 +53,24 @@ const Home = () => {
       <NewArrivals />
 
       {/* Best Sellers */}
-      <div className="container mx-auto max-w-[800px] py-6">
+      <div className="container mx-auto max-w-[1000px] py-6">
         <h2 className="text-2xl text-center font-bold mb-3">Bán Chạy Nhất</h2>
         {topSellersLoading ? (
           <p className="text-center">Đang tải...</p>
         ) : topSellersError ? (
           <p className="text-red-500 text-center">Lỗi: {topSellersError}</p>
         ) : (
-          <div className="grid grid-cols-3 gap-2 justify-items-center">
+          <div className="grid grid-cols-3 gap-4 justify-items-center">
             {Array.isArray(topSellers) && topSellers.length > 0 ? (
               topSellers.map((product, index) => (
                 <Link
                   key={index}
                   to={`/product/${product._id}`}
-                  className="block w-full max-w-[200px]"
+                  className="block w-full max-w-[300px]"
                 >
-                  <div className="bg-white p-4 rounded-lg shadow hover:shadow-lg transition">
+                  <div className="bg-white p-6 rounded-lg shadow hover:shadow-lg transition">
                     {/* Ảnh sản phẩm */}
-                    <div className="w-full h-64 mb-3">
+                    <div className="w-full h-80 mb-4">
                       <img
                         src={
                           product.images?.[0]?.url || "/placeholder-image.jpg"
@@ -85,7 +85,7 @@ const Home = () => {
                     </div>
 
                     {/* Tên sản phẩm */}
-                    <h3 className="text-sm font-medium mb-2 text-gray-900 truncate">
+                    <h3 className="text-base font-medium mb-2 text-gray-900 truncate">
                       {product.name || "Không có tên"}
                     </h3>
 
@@ -93,15 +93,15 @@ const Home = () => {
                     <div className="flex items-center gap-2">
                       {product.discountPrice ? (
                         <>
-                          <span className="text-gray-400 line-through text-xs">
+                          <span className="text-gray-400 line-through text-sm">
                             {product.price.toLocaleString("vi-VN")} VND
                           </span>
-                          <span className="text-red-500 font-semibold text-sm">
+                          <span className="text-red-500 font-semibold text-base">
                             {product.discountPrice.toLocaleString("vi-VN")} VND
                           </span>
                         </>
                       ) : (
-                        <span className="text-gray-700 font-medium text-sm">
+                        <span className="text-gray-700 font-medium text-base">
                           {product.price.toLocaleString("vi-VN")} VND
                         </span>
                       )}
