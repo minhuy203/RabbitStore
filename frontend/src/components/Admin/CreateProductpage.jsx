@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate, useParams } from "react-router-dom";
 import { fetchProductsDetails } from "../../redux/slices/productSlice";
-import { updateProduct } from "../../redux/slices/adminProductSlice";
+import { createProduct } from "../../redux/slices/adminProductSlice";
 import axios from "axios";
 
 const colors = [
@@ -137,7 +137,7 @@ const CreateProductPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await dispatch(updateProduct({ id, productData })).unwrap();
+      await dispatch(createProduct({ id, productData })).unwrap();
       setMessage("✅ Thêm mới sản phẩm thành công!");
       setTimeout(() => setMessage(""), 3000);
       navigate("/admin/products");
