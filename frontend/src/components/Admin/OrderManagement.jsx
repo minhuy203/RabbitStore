@@ -36,6 +36,8 @@ const OrderManagement = () => {
             <tr>
               <th className="py-3 px-4">ID đơn hàng</th>
               <th className="py-3 px-4">Khách hàng</th>
+              <th className="py-3 px-4">Tên sản phẩm</th>
+              <th className="py-3 px-4">Số lượng</th>
               <th className="py-3 px-4">Tổng giá</th>
               <th className="py-3 px-4">Hành động</th>
             </tr>
@@ -61,6 +63,15 @@ const OrderManagement = () => {
                       : "Khách không xác định"}
                   </td>
                   <td className="p-4">
+                    {order.orderItems?.length > 0
+                      ? order.orderItems[0].name
+                      : "N/A"}
+                    {order.orderItems?.length > 1 && " ..."}
+                  </td>
+                  <td className="p-4">
+                    {order.orderItems?.reduce((total, item) => total + (item.quantity || 0), 0) || 0}
+                  </td>
+                  <td className="p-4">
                     {order.totalPrice?.toLocaleString("vi-VN") || 0} VND
                   </td>
                   <td className="p-4">
@@ -75,7 +86,7 @@ const OrderManagement = () => {
               ))
             ) : (
               <tr>
-                <td colSpan={4} className="p-4 text-center text-gray-500">
+                <td colSpan={6} className="p-4 text-center text-gray-500">
                   Không tìm thấy đơn hàng nào.
                 </td>
               </tr>
