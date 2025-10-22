@@ -54,14 +54,12 @@ const Home = () => {
       {/* Best Sellers */}
       <div className="container mx-auto max-w-[800px] py-6">
         <h2 className="text-2xl text-center font-bold mb-3">Bán Chạy Nhất</h2>
-        <div className="flex justify-center">
-          <ProductGrid
-            products={topSellers}
-            loading={topSellersLoading}
-            error={topSellersError}
-            gridClass="grid-cols-3 gap-2"
-          />
-        </div>
+        <ProductGrid
+          products={topSellers}
+          loading={topSellersLoading}
+          error={topSellersError}
+          gridClass="grid-cols-3 gap-2 justify-items-center"
+        />
       </div>
 
       {/* Women's Top Clothing */}
