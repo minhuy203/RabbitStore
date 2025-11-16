@@ -32,15 +32,13 @@ const OrderDetailsPage = () => {
       return;
     }
 
-    dispatch(cancelOrder({ orderId: id, reason: cancelReason })).then(
-      (action) => {
-        if (action.meta.requestStatus === "fulfilled") {
-          setShowCancelModal(false);
-          setCancelReason("");
-          setCancelError("");
-        }
+    dispatch(cancelOrder({ orderId: id, reason: cancelReason })).then((action) => {
+      if (action.meta.requestStatus === "fulfilled") {
+        setShowCancelModal(false);
+        setCancelReason("");
+        setCancelError("");
       }
-    );
+    });
   };
 
   const formatShippingAddress = (addr) => {
@@ -50,10 +48,7 @@ const OrderDetailsPage = () => {
 
   const renderStatus = (status) => {
     const map = {
-      Processing: {
-        text: "Đang xử lí",
-        color: "bg-yellow-100 text-yellow-700",
-      },
+      Processing: { text: "Đang xử lí", color: "bg-yellow-100 text-yellow-700" },
       Shipped: { text: "Đang vận chuyển", color: "bg-blue-100 text-blue-700" },
       Delivered: { text: "Đã giao hàng", color: "bg-green-100 text-green-700" },
       Cancelled: { text: "Đã hủy", color: "bg-red-100 text-red-700" },
@@ -67,8 +62,7 @@ const OrderDetailsPage = () => {
   };
 
   if (loading) return <p className="text-center py-8">Đang tải...</p>;
-  if (error)
-    return <p className="text-red-500 text-center py-8">Lỗi: {error}</p>;
+  if (error) return <p className="text-red-500 text-center py-8">Lỗi: {error}</p>;
 
   return (
     <div className="max-w-7xl mx-auto p-4 sm:p-6">
@@ -77,7 +71,7 @@ const OrderDetailsPage = () => {
       {!orderDetails ? (
         <p>Không tìm thấy đơn hàng</p>
       ) : (
-        <div className="bg-white p-6 rounded-lg border">
+        <div className="bg-white p-6 rounded-lg border relative">
           {/* Header */}
           <div className="flex flex-col sm:flex-row justify-between mb-8">
             <div>
@@ -119,7 +113,7 @@ const OrderDetailsPage = () => {
           </div>
 
           {/* Sản phẩm */}
-          <div className="mb-6">
+          <div className="mb-10">
             <h4 className="font-semibold mb-3">Sản phẩm</h4>
             <div className="overflow-x-auto">
               <table className="min-w-full text-sm">
@@ -171,45 +165,48 @@ const OrderDetailsPage = () => {
             </div>
           </div>
 
-          {/* Nút hủy */}
-          {orderDetails.status === "Processing" && (
-            <button
-              onClick={() => setShowCancelModal(true)}
-              className="bg-red-500 text-white px-5 py-2 rounded hover:bg-red-600"
-            >
-              Hủy đơn hàng
-            </button>
-          )}
-
-          <Link
-            to="/my-orders"
-            className="inline-block mt-4 text-blue-600 hover:underline"
-          >
-            ← Quay lại
-          </Link>
-
           {/* Lý do hủy (nếu có) */}
           {orderDetails.status === "Cancelled" && orderDetails.cancelReason && (
-            <div className="mt-6 p-4 bg-red-50 border border-red-200 rounded">
+            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
               <p className="font-medium text-red-700">Lý do hủy:</p>
               <p className="text-red-600">{orderDetails.cancelReason}</p>
             </div>
           )}
+
+          {/* Nút Hủy + Quay lại - GÓC DƯỚI BÊN PHẢI */}
+          <div className="flex justify-between items-center mt-8 pt-6 border-t border-gray-200">
+            <Link
+              to="/my-orders"
+              className="text-blue-600 hover:underline font-medium"
+            >
+              ← Quay lại đơn hàng
+            </Link>
+
+            {/* Nút Hủy - chỉ hiện khi Processing */}
+            {orderDetails.status === "Processing" && (
+              <button
+                onClick={() => setShowCancelModal(true)}
+                className="bg-red-500 text-white px-6 py-2.5 rounded-lg hover:bg-red-600 transition font-medium shadow-md"
+              >
+                Hủy đơn hàng
+              </button>
+            )}
+          </div>
         </div>
       )}
 
       {/* Modal hủy đơn */}
       {showCancelModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white p-6 rounded-lg max-w-md w-full">
-            <h3 className="text-xl font-bold mb-4">Hủy đơn hàng</h3>
-            <p className="text-gray-600 mb-4">Chọn lý do hủy:</p>
+          <div className="bg-white p-6 rounded-lg max-w-md w-full shadow-xl">
+            <h3 className="text-xl font-bold mb-4 text-gray-800">Hủy đơn hàng</h3>
+            <p className="text-gray-600 mb-4">Vui lòng chọn lý do hủy đơn:</p>
 
             <div className="space-y-2 mb-4">
               {reasons.map((r) => (
                 <label
                   key={r}
-                  className="flex items-center space-x-2 cursor-pointer"
+                  className="flex items-center space-x-2 cursor-pointer hover:bg-gray-50 p-2 rounded"
                 >
                   <input
                     type="radio"
@@ -217,32 +214,32 @@ const OrderDetailsPage = () => {
                     value={r}
                     checked={cancelReason === r}
                     onChange={(e) => setCancelReason(e.target.value)}
-                    className="text-red-500"
+                    className="text-red-500 focus:ring-red-500"
                   />
-                  <span>{r}</span>
+                  <span className="text-gray-700">{r}</span>
                 </label>
               ))}
             </div>
 
             {cancelError && (
-              <p className="text-red-500 text-sm mb-4">{cancelError}</p>
+              <p className="text-red-500 text-sm mb-4 font-medium">{cancelError}</p>
             )}
 
-            <div className="flex justify-end space-x-3">
+            <div className="flex justify-end space-x-3 mt-6">
               <button
                 onClick={() => {
                   setShowCancelModal(false);
                   setCancelError("");
                   setCancelReason("");
                 }}
-                className="px-4 py-2 border rounded hover:bg-gray-100"
+                className="px-5 py-2 border border-gray-300 rounded-lg hover:bg-gray-100 transition"
               >
                 Hủy bỏ
               </button>
               <button
                 onClick={handleCancelOrder}
                 disabled={loading}
-                className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 disabled:opacity-50"
+                className="px-5 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed transition font-medium"
               >
                 {loading ? "Đang xử lý..." : "Xác nhận hủy"}
               </button>
