@@ -1,3 +1,4 @@
+// src/redux/slices/adminOrderSlice.js
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import axios from "axios";
 
@@ -16,7 +17,7 @@ export const fetchAllOrders = createAsyncThunk(
       );
       return response.data;
     } catch (error) {
-      return rejectWithValue(error.response.data);
+      return rejectWithValue(error.response?.data || { message: "Lỗi server" });
     }
   }
 );
@@ -36,7 +37,7 @@ export const fetchOrderById = createAsyncThunk(
       );
       return response.data;
     } catch (error) {
-      return rejectWithValue(error.response.data);
+      return rejectWithValue(error.response?.data || { message: "Lỗi server" });
     }
   }
 );
@@ -57,7 +58,28 @@ export const updateOrderStatus = createAsyncThunk(
       );
       return response.data;
     } catch (error) {
-      return rejectWithValue(error.response.data);
+      return rejectWithValue(error.response?.data || { message: "Lỗi server" });
+    }
+  }
+);
+
+// HỦY ĐƠN HÀNG BỞI ADMIN
+export const cancelOrderByAdmin = createAsyncThunk(
+  "adminOrders/cancelOrderByAdmin",
+  async ({ orderId, reason }, { rejectWithValue }) => {
+    try {
+      const response = await axios.post(
+        `${import.meta.env.VITE_BACKEND_URL}/api/admin/orders/${orderId}/cancel`,
+        { reason },
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("userToken")}`,
+          },
+        }
+      );
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data || { message: "Hủy đơn thất bại" });
     }
   }
 );
@@ -77,7 +99,7 @@ export const deleteOrder = createAsyncThunk(
       );
       return id;
     } catch (error) {
-      return rejectWithValue(error.response.data);
+      return rejectWithValue(error.response?.data || { message: "Xóa thất bại" });
     }
   }
 );
@@ -86,7 +108,7 @@ const adminOrderSlice = createSlice({
   name: "adminOrders",
   initialState: {
     orders: [],
-    order: null, // Thêm trạng thái để lưu chi tiết đơn hàng
+    order: null,
     totalOrders: 0,
     totalSales: 0,
     loading: false,
@@ -95,6 +117,7 @@ const adminOrderSlice = createSlice({
   reducers: {},
   extraReducers: (builder) => {
     builder
+      // fetchAllOrders
       .addCase(fetchAllOrders.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -103,15 +126,14 @@ const adminOrderSlice = createSlice({
         state.loading = false;
         state.orders = action.payload;
         state.totalOrders = action.payload.length;
-        state.totalSales = action.payload.reduce(
-          (acc, order) => acc + (order.totalPrice || 0),
-          0
-        );
+        state.totalSales = action.payload.reduce((acc, o) => acc + (o.totalPrice || 0), 0);
       })
       .addCase(fetchAllOrders.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.payload?.message || "Failed to fetch orders";
+        state.error = action.payload?.message || "Lỗi tải danh sách đơn hàng";
       })
+
+      // fetchOrderById
       .addCase(fetchOrderById.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -122,22 +144,38 @@ const adminOrderSlice = createSlice({
       })
       .addCase(fetchOrderById.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.payload?.message || "Failed to fetch order";
+        state.error = action.payload?.message || "Lỗi tải chi tiết đơn hàng";
       })
+
+      // updateOrderStatus
       .addCase(updateOrderStatus.fulfilled, (state, action) => {
-        const updatedOrder = action.payload;
-        const index = state.orders.findIndex((o) => o._id === updatedOrder._id);
-        if (index !== -1) state.orders[index] = updatedOrder;
-        if (state.order && state.order._id === updatedOrder._id) {
-          state.order = updatedOrder; // Cập nhật chi tiết đơn hàng
-        }
+        const updated = action.payload;
+        const idx = state.orders.findIndex((o) => o._id === updated._id);
+        if (idx !== -1) state.orders[idx] = updated;
+        if (state.order?._id === updated._id) state.order = updated;
       })
+
+      // cancelOrderByAdmin
+      .addCase(cancelOrderByAdmin.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(cancelOrderByAdmin.fulfilled, (state, action) => {
+        state.loading = false;
+        const cancelled = action.payload.order;
+        const idx = state.orders.findIndex((o) => o._id === cancelled._id);
+        if (idx !== -1) state.orders[idx] = cancelled;
+        if (state.order?._id === cancelled._id) state.order = cancelled;
+      })
+      .addCase(cancelOrderByAdmin.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload?.message || "Hủy đơn thất bại";
+      })
+
+      // deleteOrder
       .addCase(deleteOrder.fulfilled, (state, action) => {
         state.orders = state.orders.filter((o) => o._id !== action.payload);
         state.totalOrders = state.orders.length;
-        if (state.order && state.order._id === action.payload) {
-          state.order = null; // Xóa chi tiết đơn hàng nếu bị xóa
-        }
+        if (state.order?._id === action.payload) state.order = null;
       });
   },
 });

@@ -1,3 +1,4 @@
+// backend/routes/adminOrderRoutes.js
 const express = require("express");
 const mongoose = require("mongoose");
 const Order = require("../models/Order");
@@ -6,54 +7,44 @@ const { protect, admin } = require("../middleware/authMiddleware");
 
 const router = express.Router();
 
-// Route GET /api/admin/orders
-// Get all orders
+// GET: Lấy tất cả đơn hàng
 router.get("/", protect, admin, async (req, res) => {
   try {
-    const orders = await Order.find({}).populate("user", "name email");
+    const orders = await Order.find({}).populate("user", "name email").sort({ createdAt: -1 });
     res.json(orders);
   } catch (error) {
-    console.error(error);
+    console.error("Lỗi GET /api/admin/orders:", error);
     res.status(500).json({ message: "Lỗi server" });
   }
 });
 
-// Route GET /api/admin/orders/:id
-// Get order by ID
+// GET: Lấy đơn hàng theo ID
 router.get("/:id", protect, admin, async (req, res) => {
   try {
     const order = await Order.findById(req.params.id).populate("user", "name email");
-    if (order) {
-      res.json(order);
-    } else {
-      res.status(404).json({ message: "Không tìm thấy đơn hàng" });
-    }
+    if (!order) return res.status(404).json({ message: "Không tìm thấy đơn hàng" });
+    res.json(order);
   } catch (error) {
-    console.error(error);
+    console.error("Lỗi GET /:id:", error);
     res.status(500).json({ message: "Lỗi server" });
   }
 });
 
-// Route PUT /api/admin/orders/:id
-// Update order status and update totalSold for products
+// PUT: Cập nhật trạng thái đơn hàng
 router.put("/:id", protect, admin, async (req, res) => {
   try {
     const { id } = req.params;
     const { status } = req.body;
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
-      return res.status(400).json({ message: "ID đơn hàng không hợp lệ" });
+      return res.status(400).json({ message: "ID không hợp lệ" });
     }
 
-    const order = await Order.findById(id).populate("user", "name");
-    if (!order) {
-      return res.status(404).json({ message: "Không tìm thấy đơn hàng" });
-    }
+    const order = await Order.findById(id);
+    if (!order) return res.status(404).json({ message: "Không tìm thấy đơn hàng" });
 
-    // Cập nhật trạng thái
     order.status = status || order.status;
 
-    // Nếu đánh dấu Delivered thì tự động thanh toán và cập nhật totalSold
     if (status === "Delivered") {
       order.isDelivered = true;
       order.deliveredAt = Date.now();
@@ -61,37 +52,62 @@ router.put("/:id", protect, admin, async (req, res) => {
       order.paidAt = order.paidAt || Date.now();
       order.paymentStatus = "paid";
 
-      // Cập nhật totalSold cho từng sản phẩm
       for (const item of order.orderItems) {
         await Product.findByIdAndUpdate(
           item.productId,
-          { $inc: { totalSold: item.quantity || 0 } },
+          { $inc: { totalSold: item.quantity } },
           { new: true }
         );
       }
     }
 
-    const updatedOrder = await order.save();
-    res.json(updatedOrder);
+    const updated = await order.save();
+    res.json(updated);
   } catch (error) {
-    console.error("Lỗi khi cập nhật trạng thái đơn hàng:", error);
-    res.status(500).json({ message: "Lỗi server", error: error.message });
+    console.error("Lỗi PUT /:id:", error);
+    res.status(500).json({ message: "Lỗi server" });
   }
 });
 
-// Route DELETE /api/admin/orders/:id
-// Delete order
+// POST: HỦY ĐƠN HÀNG BỞI ADMIN
+router.post("/:id/cancel", protect, admin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { reason } = req.body;
+
+    if (!reason?.trim()) {
+      return res.status(400).json({ message: "Vui lòng cung cấp lý do hủy" });
+    }
+
+    const order = await Order.findById(id);
+    if (!order) return res.status(404).json({ message: "Không tìm thấy đơn hàng" });
+
+    if (!["Processing", "Shipped"].includes(order.status)) {
+      return res.status(400).json({ message: "Chỉ hủy được đơn đang xử lý hoặc đang giao" });
+    }
+
+    order.status = "Cancelled";
+    order.cancelReason = reason.trim();
+    order.cancelledAt = new Date();
+
+    const cancelledOrder = await order.save();
+    res.json({ message: "Hủy đơn thành công", order: cancelledOrder });
+  } catch (error) {
+    console.error("Lỗi POST /:id/cancel:", error);
+    res.status(500).json({ message: "Lỗi server" });
+  }
+});
+
+// DELETE: Xóa đơn hàng
 router.delete("/:id", protect, admin, async (req, res) => {
   try {
     const order = await Order.findById(req.params.id);
-    if (order) {
-      await order.deleteOne();
-      res.json({ message: "Đơn hàng đã được xóa" });
-    } else {
-      res.status(404).json({ message: "Không tìm thấy đơn hàng" });
-    }
+    if (!order) return res.status(404).json({ message: "Không tìm thấy đơn hàng" });
+
+    await order.deleteOne();
+    res.json({ message: "Xóa đơn hàng thành công" });
   } catch (error) {
-    console.error(error);
+    console.error("Lỗi DELETE /:id:", error);
     res.status(500).json({ message: "Lỗi server" });
   }
 });
