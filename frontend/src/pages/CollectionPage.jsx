@@ -1,4 +1,3 @@
-// src/pages/CollectionPage.jsx
 import React, { useEffect, useRef, useState } from "react";
 import { FaFilter } from "react-icons/fa";
 import FilterSidebar from "../components/Products/FilterSidebar";
@@ -12,29 +11,25 @@ const CollectionPage = () => {
   const { collection } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
   const dispatch = useDispatch();
-  const {
-    products,
-    loading,
-    error,
-    totalPages,
-    currentPage,
-  } = useSelector((state) => state.products);
+  const { products, loading, error, pagination } = useSelector(
+    (state) => state.products
+  );
 
   const sidebarRef = useRef(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
-  const page = parseInt(searchParams.get("page")) || 1;
+  const currentPage = parseInt(searchParams.get("page")) || 1;
 
   useEffect(() => {
     const queryParams = Object.fromEntries([...searchParams]);
-    delete queryParams.page;
+    const page = parseInt(queryParams.page) || 1;
 
     dispatch(
       fetchProductsByFilters({
         collection,
+        ...queryParams,
         page,
         limit: 12,
-        ...queryParams,
       })
     );
   }, [dispatch, collection, searchParams]);
@@ -52,16 +47,17 @@ const CollectionPage = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const handlePageChange = (newPage) => {
-    if (newPage < 1 || newPage > totalPages || newPage === page) return;
+  const goToPage = (page) => {
+    if (page < 1 || page > pagination.totalPages) return;
     const newParams = new URLSearchParams(searchParams);
-    newParams.set("page", newPage);
+    newParams.set("page", page);
     setSearchParams(newParams);
     window.scrollTo(0, 0);
   };
 
   return (
     <div className="flex flex-col lg:flex-row">
+      {/* Mobile filter button */}
       <button
         onClick={toggleSidebar}
         className="lg:hidden border p-2 flex justify-center items-center mb-4"
@@ -69,6 +65,7 @@ const CollectionPage = () => {
         <FaFilter className="mr-2" /> Bộ lọc
       </button>
 
+      {/* Filter Sidebar */}
       <div
         ref={sidebarRef}
         className={`${
@@ -78,9 +75,10 @@ const CollectionPage = () => {
         <FilterSidebar />
       </div>
 
+      {/* Main Content */}
       <div className="flex-grow p-4">
         <h2 className="text-2xl uppercase font-medium mb-4">
-          {collection === "all" ? "Tất cả sản phẩm" : collection}
+          {collection || "Tất cả bộ sưu tập"}
         </h2>
 
         <SortOption />
@@ -88,45 +86,75 @@ const CollectionPage = () => {
         <ProductGrid products={products} loading={loading} error={error} />
 
         {/* Pagination */}
-        {totalPages > 1 && (
-          <div className="flex justify-center items-center gap-2 mt-8 flex-wrap">
+        {pagination.totalPages > 1 && (
+          <div className="flex justify-center items-center mt-8 space-x-2">
             <button
-              onClick={() => handlePageChange(page - 1)}
-              disabled={page === 1}
-              className="px-4 py-2 border rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+              onClick={() => goToPage(pagination.currentPage - 1)}
+              disabled={!pagination.hasPrev}
+              className={`px-4 py-2 border rounded ${
+                !pagination.hasPrev
+                  ? "bg-gray-200 text-gray-500 cursor-not-allowed"
+                  : "bg-white hover:bg-gray-100"
+              }`}
             >
               Trước
             </button>
 
-            {Array.from({ length: totalPages }, (_, i) => i + 1)
-              .filter((p) => p === 1 || p === totalPages || Math.abs(p - page) <= 2)
-              .map((p, idx, arr) => (
-                <div key={p}>
-                  {idx > 0 && arr[idx - 1] !== p - 1 && (
-                    <span className="px-2">...</span>
-                  )}
-                  <button
-                    onClick={() => handlePageChange(p)}
-                    className={`px-3 py-1 border rounded ${
-                      p === page
-                        ? "bg-black text-white"
-                        : "hover:bg-gray-100"
-                    }`}
-                  >
-                    {p}
-                  </button>
-                </div>
-              ))}
+            <div className="flex space-x-1">
+              {[...Array(pagination.totalPages)].map((_, i) => {
+                const pageNum = i + 1;
+                if (
+                  pageNum === 1 ||
+                  pageNum === pagination.totalPages ||
+                  (pageNum >= pagination.currentPage - 1 &&
+                    pageNum <= pagination.currentPage + 1)
+                ) {
+                  return (
+                    <button
+                      key={pageNum}
+                      onClick={() => goToPage(pageNum)}
+                      className={`px-3 py-1 rounded ${
+                        pagination.currentPage === pageNum
+                          ? "bg-black text-white"
+                          : "bg-white border hover:bg-gray-100"
+                      }`}
+                    >
+                      {pageNum}
+                    </button>
+                  );
+                } else if (
+                  (pageNum === pagination.currentPage - 2 && pagination.currentPage > 3) ||
+                  (pageNum === pagination.currentPage + 2 && pagination.currentPage < pagination.totalPages - 2)
+                ) {
+                  return (
+                    <span key={pageNum} className="px-2">
+                      ...
+                    </span>
+                  );
+                }
+                return null;
+              })}
+            </div>
 
             <button
-              onClick={() => handlePageChange(page + 1)}
-              disabled={page === totalPages}
-              className="px-4 py-2 border rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+              onClick={() => goToPage(pagination.currentPage + 1)}
+              disabled={!pagination.hasNext}
+              className={`px-4 py-2 border rounded ${
+                !pagination.hasNext
+                  ? "bg-gray-200 text-gray-500 cursor-not-allowed"
+                  : "bg-white hover:bg-gray-100"
+              }`}
             >
               Sau
             </button>
           </div>
         )}
+
+        <p className="text-center text-sm text-gray-600 mt-4">
+          Hiển thị {(currentPage - 1) * 12 + 1} -{" "}
+          {Math.min(currentPage * 12, pagination.totalProducts)} trong tổng số{" "}
+          {pagination.totalProducts} sản phẩm
+        </p>
       </div>
     </div>
   );
