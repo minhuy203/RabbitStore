@@ -1,29 +1,32 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import axios from "axios";
 
-// Lấy danh sách đơn hàng của user
+// Lấy danh sách đơn hàng của user (có phân trang)
 export const fetchUserOrders = createAsyncThunk(
   "orders/fetchUserOrders",
-  async (_, { rejectWithValue }) => {
+  async ({ page = 1, limit = 10 }, { rejectWithValue }) => {
     try {
       const token = localStorage.getItem("userToken");
       if (!token) {
         return rejectWithValue("Không tìm thấy token xác thực");
       }
+
       const response = await axios.get(
         `${import.meta.env.VITE_BACKEND_URL}/api/orders/my-orders`,
         {
+          params: { page, limit },
           headers: {
             Authorization: `Bearer ${token}`,
           },
         }
       );
-      console.log("API fetchUserOrders response:", response.data); // Debug
-      return response.data;
+
+      console.log("API fetchUserOrders response:", response.data);
+      return response.data; // { orders: [...], pagination: { ... } }
     } catch (error) {
-      console.error("Error in fetchUserOrders:", error); // Debug
+      console.error("Error in fetchUserOrders:", error);
       return rejectWithValue(
-        error.response?.data?.message || "Lỗi khi fetch orders"
+        error.response?.data?.message || "Lỗi khi tải đơn hàng"
       );
     }
   }
@@ -38,6 +41,7 @@ export const fetchOrderDetails = createAsyncThunk(
       if (!token) {
         return rejectWithValue("Không tìm thấy token xác thực");
       }
+
       const response = await axios.get(
         `${import.meta.env.VITE_BACKEND_URL}/api/orders/${orderId}`,
         {
@@ -46,12 +50,13 @@ export const fetchOrderDetails = createAsyncThunk(
           },
         }
       );
-      console.log("API fetchOrderDetails response:", response.data); // Debug
+
+      console.log("API fetchOrderDetails response:", response.data);
       return response.data;
     } catch (error) {
-      console.error("Error in fetchOrderDetails:", error); // Debug
+      console.error("Error in fetchOrderDetails:", error);
       return rejectWithValue(
-        error.response?.data?.message || "Lỗi khi fetch order detail"
+        error.response?.data?.message || "Lỗi khi lấy chi tiết đơn hàng"
       );
     }
   }
@@ -61,14 +66,18 @@ const orderSlice = createSlice({
   name: "orders",
   initialState: {
     orders: [],
-    totalOrders: 0,
     orderDetails: null,
     loading: false,
     error: null,
+    pagination: {
+      currentPage: 1,
+      totalPages: 1,
+      totalOrders: 0,
+    },
   },
   reducers: {
     resetError: (state) => {
-      state.error = null; // Thêm reducer để reset lỗi nếu cần
+      state.error = null;
     },
   },
   extraReducers: (builder) => {
@@ -80,13 +89,20 @@ const orderSlice = createSlice({
       })
       .addCase(fetchUserOrders.fulfilled, (state, action) => {
         state.loading = false;
-        state.orders = Array.isArray(action.payload) ? action.payload : [];
-        state.totalOrders = state.orders.length;
+        state.orders = Array.isArray(action.payload.orders)
+          ? action.payload.orders
+          : [];
+        state.pagination = {
+          currentPage: action.payload.pagination?.currentPage || 1,
+          totalPages: action.payload.pagination?.totalPages || 1,
+          totalOrders: action.payload.pagination?.totalOrders || 0,
+        };
       })
       .addCase(fetchUserOrders.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       })
+
       // Fetch order details
       .addCase(fetchOrderDetails.pending, (state) => {
         state.loading = true;
@@ -95,7 +111,6 @@ const orderSlice = createSlice({
       .addCase(fetchOrderDetails.fulfilled, (state, action) => {
         state.loading = false;
         state.orderDetails = action.payload;
-        console.log("Order details from API:", action.payload);
       })
       .addCase(fetchOrderDetails.rejected, (state, action) => {
         state.loading = false;
