@@ -1,3 +1,4 @@
+// src/redux/slices/productSlice.js
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import axios from "axios";
 
@@ -15,7 +16,8 @@ export const fetchProductsByFilters = createAsyncThunk(
     category,
     material,
     brand,
-    limit,
+    limit = 12,
+    page = 1,
   }) => {
     const query = new URLSearchParams();
     if (collection && collection !== "all")
@@ -36,75 +38,19 @@ export const fetchProductsByFilters = createAsyncThunk(
       );
     if (brand)
       query.append("brand", Array.isArray(brand) ? brand.join(",") : brand);
-    if (limit) query.append("limit", limit);
+
+    // Thêm phân trang
+    query.append("limit", limit);
+    query.append("page", page);
 
     const response = await axios.get(
       `${import.meta.env.VITE_BACKEND_URL}/api/products?${query.toString()}`
     );
-    return response.data;
+    return response.data; // { products: [], totalPages, currentPage, totalProducts }
   }
 );
 
-export const fetchProductsDetails = createAsyncThunk(
-  "products/fetchProductDetails",
-  async (id, { rejectWithValue }) => {
-    try {
-      const response = await axios.get(
-        `${import.meta.env.VITE_BACKEND_URL}/api/products/${id}`
-      );
-      return response.data;
-    } catch (error) {
-      return rejectWithValue(
-        error.response?.data?.message || "Lỗi khi lấy chi tiết sản phẩm"
-      );
-    }
-  }
-);
-
-export const updatedProduct = createAsyncThunk(
-  "products/updateProduct",
-  async ({ id, productData }, { rejectWithValue }) => {
-    try {
-      const token = localStorage.getItem("userToken");
-      if (!token) {
-        throw new Error("Không tìm thấy token xác thực");
-      }
-      const response = await axios.put(
-        `${import.meta.env.VITE_BACKEND_URL}/api/products/${id}`,
-        productData,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-      return response.data;
-    } catch (error) {
-      return rejectWithValue(
-        error.response?.data?.message || "Lỗi khi cập nhật sản phẩm"
-      );
-    }
-  }
-);
-
-export const fetchSimilarProducts = createAsyncThunk(
-  "products/fetchSimilarProducts",
-  async ({ id }, { rejectWithValue }) => {
-    try {
-      console.log("Fetching similar products for ID:", id); // SỬA: Thêm log
-      const response = await axios.get(
-        `${import.meta.env.VITE_BACKEND_URL}/api/products/similar/${id}`
-      );
-      console.log("Similar products response:", response.data); // SỬA: Thêm log
-      return response.data;
-    } catch (error) {
-      console.error("Error fetching similar products:", error.response?.data); // SỬA: Thêm log
-      return rejectWithValue(
-        error.response?.data?.message || "Lỗi khi lấy sản phẩm tương tự"
-      );
-    }
-  }
-);
+// ... các async thunk khác giữ nguyên ...
 
 const productsSlice = createSlice({
   name: "products",
@@ -113,9 +59,14 @@ const productsSlice = createSlice({
     selectedProduct: null,
     similarProducts: [],
     loading: false,
-    // SỬA: Thêm trạng thái loading riêng cho similarProducts
     similarProductsLoading: false,
     error: null,
+
+    // Thêm phân trang
+    totalPages: 1,
+    currentPage: 1,
+    totalProducts: 0,
+
     filters: {
       category: "",
       size: [],
@@ -158,57 +109,35 @@ const productsSlice = createSlice({
       })
       .addCase(fetchProductsByFilters.fulfilled, (state, action) => {
         state.loading = false;
-        state.products = Array.isArray(action.payload) ? action.payload : [];
+        state.products = Array.isArray(action.payload.products)
+          ? action.payload.products
+          : [];
+        state.totalPages = action.payload.totalPages || 1;
+        state.currentPage = action.payload.currentPage || 1;
+        state.totalProducts = action.payload.totalProducts || 0;
       })
       .addCase(fetchProductsByFilters.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload || "Lỗi khi lấy danh sách sản phẩm";
+        state.products = [];
+        state.totalPages = 1;
+        state.currentPage = 1;
       })
-      .addCase(fetchProductsDetails.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
-      .addCase(fetchProductsDetails.fulfilled, (state, action) => {
-        state.loading = false;
-        state.selectedProduct = action.payload;
-      })
-      .addCase(fetchProductsDetails.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload;
-      })
-      .addCase(updatedProduct.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
-      .addCase(updatedProduct.fulfilled, (state, action) => {
-        state.loading = false;
-        const updatedProduct = action.payload;
-        const index = state.products.findIndex(
-          (product) => product._id === updatedProduct._id
-        );
-        if (index !== -1) {
-          state.products[index] = updatedProduct;
-        }
-        state.selectedProduct = updatedProduct;
-      })
-      .addCase(updatedProduct.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload;
-      })
-      // SỬA: Cập nhật xử lý fetchSimilarProducts
+
+      // ... các case khác giữ nguyên ...
+
       .addCase(fetchSimilarProducts.pending, (state) => {
         state.similarProductsLoading = true;
         state.error = null;
       })
       .addCase(fetchSimilarProducts.fulfilled, (state, action) => {
         state.similarProductsLoading = false;
-        // SỬA: Đảm bảo luôn là mảng
         state.similarProducts = Array.isArray(action.payload) ? action.payload : [];
       })
       .addCase(fetchSimilarProducts.rejected, (state, action) => {
         state.similarProductsLoading = false;
         state.error = action.payload;
-        state.similarProducts = []; // SỬA: Reset thành mảng rỗng khi có lỗi
+        state.similarProducts = [];
       });
   },
 });

@@ -1,3 +1,4 @@
+// src/pages/CollectionPage.jsx
 import React, { useEffect, useRef, useState } from "react";
 import { FaFilter } from "react-icons/fa";
 import FilterSidebar from "../components/Products/FilterSidebar";
@@ -9,22 +10,36 @@ import { fetchProductsByFilters } from "../redux/slices/productSlice";
 
 const CollectionPage = () => {
   const { collection } = useParams();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const dispatch = useDispatch();
-  const { products, loading, error } = useSelector((state) => state.products);
+  const {
+    products,
+    loading,
+    error,
+    totalPages,
+    currentPage,
+  } = useSelector((state) => state.products);
 
   const sidebarRef = useRef(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
+  const page = parseInt(searchParams.get("page")) || 1;
+
   useEffect(() => {
     const queryParams = Object.fromEntries([...searchParams]);
+    delete queryParams.page;
 
-    dispatch(fetchProductsByFilters({ collection, ...queryParams }));
+    dispatch(
+      fetchProductsByFilters({
+        collection,
+        page,
+        limit: 12,
+        ...queryParams,
+      })
+    );
   }, [dispatch, collection, searchParams]);
 
-  const toggleSidebar = () => {
-    setIsSidebarOpen(!isSidebarOpen);
-  };
+  const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
 
   const handleClickOutside = (e) => {
     if (sidebarRef.current && !sidebarRef.current.contains(e.target)) {
@@ -33,24 +48,27 @@ const CollectionPage = () => {
   };
 
   useEffect(() => {
-    //add event listener for clicks
     document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  const handlePageChange = (newPage) => {
+    if (newPage < 1 || newPage > totalPages || newPage === page) return;
+    const newParams = new URLSearchParams(searchParams);
+    newParams.set("page", newPage);
+    setSearchParams(newParams);
+    window.scrollTo(0, 0);
+  };
 
   return (
     <div className="flex flex-col lg:flex-row">
-      {/* mobile filter button */}
       <button
         onClick={toggleSidebar}
-        className="lg:hidden border p-2 flex justify-center items-center"
+        className="lg:hidden border p-2 flex justify-center items-center mb-4"
       >
-        <FaFilter className="mr-2 " /> Bộ lọc
+        <FaFilter className="mr-2" /> Bộ lọc
       </button>
 
-      {/* filter sidebar */}
       <div
         ref={sidebarRef}
         className={`${
@@ -59,17 +77,56 @@ const CollectionPage = () => {
       >
         <FilterSidebar />
       </div>
+
       <div className="flex-grow p-4">
-        <h2 className="text-2 uppercase font-medium mb-4">
-          {" "}
-          Tất cả bộ sưu tập
+        <h2 className="text-2xl uppercase font-medium mb-4">
+          {collection === "all" ? "Tất cả sản phẩm" : collection}
         </h2>
 
-        {/* sort option */}
         <SortOption />
 
-        {/* product grid */}
         <ProductGrid products={products} loading={loading} error={error} />
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="flex justify-center items-center gap-2 mt-8 flex-wrap">
+            <button
+              onClick={() => handlePageChange(page - 1)}
+              disabled={page === 1}
+              className="px-4 py-2 border rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+            >
+              Trước
+            </button>
+
+            {Array.from({ length: totalPages }, (_, i) => i + 1)
+              .filter((p) => p === 1 || p === totalPages || Math.abs(p - page) <= 2)
+              .map((p, idx, arr) => (
+                <div key={p}>
+                  {idx > 0 && arr[idx - 1] !== p - 1 && (
+                    <span className="px-2">...</span>
+                  )}
+                  <button
+                    onClick={() => handlePageChange(p)}
+                    className={`px-3 py-1 border rounded ${
+                      p === page
+                        ? "bg-black text-white"
+                        : "hover:bg-gray-100"
+                    }`}
+                  >
+                    {p}
+                  </button>
+                </div>
+              ))}
+
+            <button
+              onClick={() => handlePageChange(page + 1)}
+              disabled={page === totalPages}
+              className="px-4 py-2 border rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+            >
+              Sau
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
