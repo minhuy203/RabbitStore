@@ -7,7 +7,7 @@ import {
   fetchUsers,
   updateUser,
 } from "../../redux/slices/adminSlice";
-import Pagination from "../components/common/Pagination"; // THÊM
+import Pagination from "../Common/Pagination"; // THÊM
 
 const UserManagement = () => {
   const dispatch = useDispatch();

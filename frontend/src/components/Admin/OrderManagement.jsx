@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate, Link } from "react-router-dom";
 import { fetchAllOrders } from "../../redux/slices/adminOrderSlice";
-import Pagination from "../components/common/Pagination"; // THÊM
+import Pagination from "../Common/Pagination"; // THÊM
 
 const OrderManagement = () => {
   const dispatch = useDispatch();
