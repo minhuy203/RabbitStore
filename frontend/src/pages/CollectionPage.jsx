@@ -17,7 +17,6 @@ const CollectionPage = () => {
 
   const sidebarRef = useRef(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-
   const currentPage = parseInt(searchParams.get("page")) || 1;
 
   useEffect(() => {
@@ -77,9 +76,8 @@ const CollectionPage = () => {
 
       {/* Main Content */}
       <div className="flex-grow p-4">
-        <h2 className="text-2xl uppercase font-medium mb-4">
-          {collection || "Tất cả bộ sưu tập"}
-        </h2>
+        {/* TIÊU ĐỀ CỐ ĐỊNH */}
+        <h2 className="text-2xl uppercase font-medium mb-4">BỘ SƯU TẬP</h2>
 
         <SortOption />
 
@@ -123,8 +121,10 @@ const CollectionPage = () => {
                     </button>
                   );
                 } else if (
-                  (pageNum === pagination.currentPage - 2 && pagination.currentPage > 3) ||
-                  (pageNum === pagination.currentPage + 2 && pagination.currentPage < pagination.totalPages - 2)
+                  (pageNum === pagination.currentPage - 2 &&
+                    pagination.currentPage > 3) ||
+                  (pageNum === pagination.currentPage + 2 &&
+                    pagination.currentPage < pagination.totalPages - 2)
                 ) {
                   return (
                     <span key={pageNum} className="px-2">
