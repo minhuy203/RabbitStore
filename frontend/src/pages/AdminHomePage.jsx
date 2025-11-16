@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import { fetchAdminProducts } from "../redux/slices/adminProductSlice";
 import { fetchAllOrders } from "../redux/slices/adminOrderSlice";
 import flatpickr from "flatpickr";
+import Pagination from "../components/Common/Pagination"; // THÊM
 
 const AdminHomePage = () => {
   const dispatch = useDispatch();
@@ -29,7 +30,10 @@ const AdminHomePage = () => {
     filteredTotalSales: 0,
   });
 
-  // Tính tổng doanh thu chỉ từ các đơn hàng có trạng thái "delivered"
+  // PHÂN TRANG
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+
   const totalSales = orders
     .filter((order) => order.status?.toLowerCase() === "delivered")
     .reduce((acc, order) => acc + (order.totalPrice || 0), 0);
@@ -50,6 +54,7 @@ const AdminHomePage = () => {
             startDate: selectedDates[0],
             endDate: selectedDates[1],
           });
+          setCurrentPage(1); // Reset về trang 1 khi đổi bộ lọc
         }
       },
     });
@@ -67,7 +72,7 @@ const AdminHomePage = () => {
           order.status?.toLowerCase() === "delivered"
         );
       })
-      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)); // Sắp xếp giảm dần theo createdAt
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
     const stats = filtered.reduce(
       (acc, order) => ({
@@ -79,15 +84,20 @@ const AdminHomePage = () => {
 
     setFilteredOrders(filtered);
     setFilteredStats(stats);
+    setCurrentPage(1); // Reset trang khi lọc
   }, [orders, dateRange]);
 
-  // Hàm định dạng tiền tệ VND
+  // PHÂN TRANG
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentItems = filteredOrders.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(filteredOrders.length / itemsPerPage);
+
   const formatVND = (value) => {
     if (value === null || value === undefined) return "0 VND";
     return value.toLocaleString("vi-VN") + " VND";
   };
 
-  // Hàm ánh xạ trạng thái sang tiếng Việt
   const mapStatus = (status) => {
     const statusMap = {
       pending: "Chờ xử lý",
@@ -124,21 +134,17 @@ const AdminHomePage = () => {
           <div className="p-4 shadow-md rounded-lg bg-white">
             <h2 className="text-xl font-semibold">Tổng sản phẩm</h2>
             <p className="text-2xl">{products.length}</p>
-            <Link
-              to="/admin/products"
-              className="text-blue-500 hover:underline"
-            >
+            <Link to="/admin/products" className="text-blue-500 hover:underline">
               Quản lý sản phẩm
             </Link>
           </div>
         </div>
       )}
+
       <div className="mt-6">
         <h2 className="text-2xl font-bold mb-4">Thống kê đơn hàng</h2>
         <div className="mb-4">
-          <label className="block text-gray-700 mb-2">
-            Chọn khoảng thời gian:
-          </label>
+          <label className="block text-gray-700 mb-2">Chọn khoảng thời gian:</label>
           <input
             id="dateRangePicker"
             type="text"
@@ -146,6 +152,7 @@ const AdminHomePage = () => {
             placeholder="Chọn khoảng thời gian"
           />
         </div>
+
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-6">
           <div className="p-4 shadow-md rounded-lg bg-white">
             <h3 className="text-lg font-semibold">Số lượng đơn hàng</h3>
@@ -153,14 +160,11 @@ const AdminHomePage = () => {
           </div>
           <div className="p-4 shadow-md rounded-lg bg-white">
             <h3 className="text-lg font-semibold">Doanh thu</h3>
-            <p className="text-2xl">
-              {formatVND(filteredStats.filteredTotalSales)}
-            </p>
+            <p className="text-2xl">{formatVND(filteredStats.filteredTotalSales)}</p>
           </div>
         </div>
-        <h3 className="text-xl font-semibold mb-4">
-          Danh sách đơn hàng (Đã giao hàng)
-        </h3>
+
+        <h3 className="text-xl font-semibold mb-4">Danh sách đơn hàng (Đã giao hàng)</h3>
         <div className="overflow-x-auto">
           <table className="min-w-full text-left text-gray-500">
             <thead className="bg-gray-100 text-xs uppercase text-gray-700">
@@ -173,16 +177,11 @@ const AdminHomePage = () => {
               </tr>
             </thead>
             <tbody>
-              {filteredOrders.length > 0 ? (
-                filteredOrders.map((order) => (
-                  <tr
-                    key={order._id}
-                    className="border-b hover:bg-gray-50 cursor-pointer"
-                  >
+              {currentItems.length > 0 ? (
+                currentItems.map((order) => (
+                  <tr key={order._id} className="border-b hover:bg-gray-50 cursor-pointer">
                     <td className="p-4">{order._id}</td>
-                    <td className="p-4">
-                      {order.user?.name || "Không xác định"}
-                    </td>
+                    <td className="p-4">{order.user?.name || "Không xác định"}</td>
                     <td className="p-4">{formatVND(order.totalPrice)}</td>
                     <td className="p-4">{mapStatus(order.status)}</td>
                     <td className="p-4">
@@ -200,6 +199,13 @@ const AdminHomePage = () => {
             </tbody>
           </table>
         </div>
+
+        {/* PHÂN TRANG */}
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+        />
       </div>
     </div>
   );
