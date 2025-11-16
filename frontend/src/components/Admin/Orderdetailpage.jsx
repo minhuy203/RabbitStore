@@ -9,7 +9,7 @@ import {
 const OrderDetailPage = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { id } = useParams(); // Lấy orderId từ URL
+  const { id } = useParams();
 
   const { user } = useSelector((state) => state.auth);
   const { order, loading, error } = useSelector((state) => state.adminOrders);
@@ -25,125 +25,241 @@ const OrderDetailPage = () => {
   const handleStatusChange = (status) => {
     dispatch(updateOrderStatus({ id, status })).then((action) => {
       if (action.meta.requestStatus === "fulfilled") {
-        dispatch(fetchOrderById(id)); // Làm mới chi tiết đơn hàng sau khi cập nhật
+        dispatch(fetchOrderById(id));
       }
     });
   };
 
-  if (loading) return <p className="text-center text-gray-500">Đang tải...</p>;
-  if (error) return <p className="text-red-500 text-center">Lỗi: {error}</p>;
-  if (!order) return <p className="text-center text-gray-500">Không tìm thấy đơn hàng</p>;
+  // Helper: Hiển thị trạng thái
+  const renderStatusBadge = (status) => {
+    const map = {
+      Processing: {
+        text: "Đang xử lý",
+        color: "bg-yellow-100 text-yellow-800",
+      },
+      Shipped: { text: "Đang vận chuyển", color: "bg-blue-100 text-blue-800" },
+      Delivered: { text: "Đã giao hàng", color: "bg-green-100 text-green-800" },
+      Cancelled: { text: "Đã hủy", color: "bg-red-100 text-red-800" },
+    };
+    const s = map[status] || map.Processing;
+    return (
+      <span className={`px-3 py-1 rounded-full text-xs font-medium ${s.color}`}>
+        {s.text}
+      </span>
+    );
+  };
+
+  if (loading)
+    return <p className="text-center text-gray-500 py-8">Đang tải...</p>;
+  if (error)
+    return <p className="text-red-500 text-center py-8">Lỗi: {error}</p>;
+  if (!order)
+    return (
+      <p className="text-center text-gray-500 py-8">Không tìm thấy đơn hàng</p>
+    );
+
+  const isFinalStatus =
+    order.status === "Delivered" || order.status === "Cancelled";
 
   return (
-    <div className="max-w-7xl mx-auto p-6">
-      <h2 className="text-2xl font-bold mb-6">Chi tiết đơn hàng #{order._id}</h2>
+    <div className="max-w-7xl mx-auto p-4 sm:p-6">
+      <h2 className="text-2xl md:text-3xl font-bold mb-6">
+        Chi tiết đơn hàng #{order._id}
+      </h2>
 
-      <div className="bg-white shadow-md rounded-lg p-6">
+      <div className="bg-white shadow-lg rounded-lg p-6 border">
         {/* Thông tin đơn hàng */}
-        <div className="mb-6">
-          <h3 className="text-lg font-semibold mb-2">Thông tin đơn hàng</h3>
-          <p><strong>Mã đơn hàng:</strong> #{order._id}</p>
-          <p><strong>Ngày tạo:</strong> {new Date(order.createdAt).toLocaleDateString("vi-VN")} {new Date(order.createdAt).toLocaleTimeString("vi-VN")}</p>
-        </div>
-
-        {/* Thông tin khách hàng */}
-        <div className="mb-6">
-          <h3 className="text-lg font-semibold mb-2">Thông tin khách hàng</h3>
-          <p><strong>Tên:</strong> {order.user?.name || "Khách không xác định"}</p>
-          <p><strong>Email:</strong> {order.user?.email || "Không có"}</p>
-        </div>
-
-        {/* Địa chỉ giao hàng */}
-        <div className="mb-6">
-          <h3 className="text-lg font-semibold mb-2">Địa chỉ giao hàng</h3>
-          <p><strong>Địa chỉ:</strong> {order.shippingAddress?.address || "Không có"}</p>
-          <p><strong>Thành phố:</strong> {order.shippingAddress?.city || "Không có"}</p>
-        </div>
-
-        {/* Thông tin thanh toán */}
-        <div className="mb-6">
-          <h3 className="text-lg font-semibold mb-2">Thông tin thanh toán</h3>
-          <p><strong>Phương thức:</strong> {order.paymentMethod || "Không xác định"}</p>
-          <p><strong>Trạng thái:</strong> {order.paymentStatus === "paid" ? "Đã thanh toán" : "Chưa thanh toán"}</p>
-          {order.paidAt && (
-            <p><strong>Thời gian thanh toán:</strong> {new Date(order.paidAt).toLocaleString("vi-VN")}</p>
-          )}
-        </div>
-
-        {/* Trạng thái đơn hàng */}
-        <div className="mb-6">
-          <h3 className="text-lg font-semibold mb-2">Trạng thái đơn hàng</h3>
-          <div className="flex items-center gap-4">
-            <select
-              value={order.status || "Processing"}
-              onChange={(e) => handleStatusChange(e.target.value)}
-              className={`bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 ${
-                loading || order.status === "Cancelled" || order.status === "Delivered"
-                  ? "opacity-50 cursor-not-allowed bg-gray-200"
-                  : ""
-              }`}
-              disabled={loading || order.status === "Cancelled" || order.status === "Delivered"}
-            >
-              <option value="Processing">Đang xử lý</option>
-              <option value="Shipped">Đang vận chuyển</option>
-              <option value="Delivered">Đã giao hàng</option>
-              <option value="Cancelled">Hủy đơn</option>
-            </select>
-            <button
-              onClick={() => handleStatusChange("Delivered")}
-              className={`bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 ${
-                loading || order.status === "Delivered" || order.status === "Cancelled"
-                  ? "opacity-50 cursor-not-allowed bg-gray-400 hover:bg-gray-400"
-                  : ""
-              }`}
-              disabled={loading || order.status === "Delivered" || order.status === "Cancelled"}
-            >
-              Đánh dấu đã giao hàng
-            </button>
+        <div className="mb-8">
+          <h3 className="text-lg font-semibold mb-3 text-gray-800">
+            Thông tin đơn hàng
+          </h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+            <p>
+              <strong>Mã đơn:</strong> #{order._id}
+            </p>
+            <p>
+              <strong>Ngày tạo:</strong>{" "}
+              {new Date(order.createdAt).toLocaleString("vi-VN")}
+            </p>
           </div>
         </div>
 
+        {/* Thông tin khách hàng */}
+        <div className="mb-8">
+          <h3 className="text-lg font-semibold mb-3 text-gray-800">
+            Khách hàng
+          </h3>
+          <div className="text-sm space-y-1">
+            <p>
+              <strong>Tên:</strong> {order.user?.name || "Khách không xác định"}
+            </p>
+            <p>
+              <strong>Email:</strong> {order.user?.email || "Không có"}
+            </p>
+          </div>
+        </div>
+
+        {/* Địa chỉ giao hàng */}
+        <div className="mb-8">
+          <h3 className="text-lg font-semibold mb-3 text-gray-800">
+            Địa chỉ giao hàng
+          </h3>
+          <div className="text-sm">
+            <p>
+              <strong>Địa chỉ:</strong>{" "}
+              {order.shippingAddress?.address || "Không có"}
+            </p>
+            <p>
+              <strong>Thành phố:</strong>{" "}
+              {order.shippingAddress?.city || "Không có"}
+            </p>
+          </div>
+        </div>
+
+        {/* Thông tin thanh toán */}
+        <div className="mb-8">
+          <h3 className="text-lg font-semibold mb-3 text-gray-800">
+            Thanh toán
+          </h3>
+          <div className="text-sm space-y-1">
+            <p>
+              <strong>Phương thức:</strong>{" "}
+              {order.paymentMethod || "Không xác định"}
+            </p>
+            <p>
+              <strong>Trạng thái:</strong>{" "}
+              <span
+                className={
+                  order.paymentStatus === "paid"
+                    ? "text-green-600"
+                    : "text-red-600"
+                }
+              >
+                {order.paymentStatus === "paid"
+                  ? "Đã thanh toán"
+                  : "Chưa thanh toán"}
+              </span>
+            </p>
+            {order.paidAt && (
+              <p>
+                <strong>Thời gian thanh toán:</strong>{" "}
+                {new Date(order.paidAt).toLocaleString("vi-VN")}
+              </p>
+            )}
+          </div>
+        </div>
+
+        {/* Trạng thái đơn hàng */}
+        <div className="mb-8">
+          <h3 className="text-lg font-semibold mb-3 text-gray-800">
+            Trạng thái đơn hàng
+          </h3>
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+            <div className="flex items-center gap-3">
+              {renderStatusBadge(order.status)}
+              {order.status === "Cancelled" && order.cancelledAt && (
+                <span className="text-xs text-gray-500">
+                  ({new Date(order.cancelledAt).toLocaleString("vi-VN")})
+                </span>
+              )}
+            </div>
+
+            {/* Chỉ cho phép thay đổi nếu chưa final */}
+            {!isFinalStatus && (
+              <div className="flex gap-2">
+                <select
+                  value={order.status}
+                  onChange={(e) => handleStatusChange(e.target.value)}
+                  disabled={loading}
+                  className="bg-white border border-gray-300 text-sm rounded-lg p-2.5 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50"
+                >
+                  <option value="Processing">Đang xử lý</option>
+                  <option value="Shipped">Đang vận chuyển</option>
+                  <option value="Delivered">Đã giao hàng</option>
+                </select>
+
+                <button
+                  onClick={() => handleStatusChange("Delivered")}
+                  disabled={loading}
+                  className="bg-green-600 text-white px-4 py-2 rounded text-sm hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {loading ? "Đang xử lý..." : "Đánh dấu giao hàng"}
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Hiển thị lý do hủy */}
+          {order.status === "Cancelled" && order.cancelReason && (
+            <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+              <p className="font-medium text-red-700 text-sm">Lý do hủy đơn:</p>
+              <p className="text-sm text-red-600 mt-1">{order.cancelReason}</p>
+              {order.cancelledAt && (
+                <p className="text-xs text-gray-500 mt-2">
+                  Hủy lúc: {new Date(order.cancelledAt).toLocaleString("vi-VN")}
+                </p>
+              )}
+            </div>
+          )}
+        </div>
+
         {/* Danh sách sản phẩm */}
-        <div className="mb-6">
-          <h3 className="text-lg font-semibold mb-2">Danh sách sản phẩm</h3>
+        <div className="mb-8">
+          <h3 className="text-lg font-semibold mb-3 text-gray-800">
+            Sản phẩm trong đơn
+          </h3>
           <div className="overflow-x-auto">
-            <table className="min-w-full text-left text-gray-500">
-              <thead className="bg-gray-100 text-xs uppercase text-gray-700">
+            <table className="min-w-full text-sm text-left text-gray-600">
+              <thead className="bg-gray-50 text-xs uppercase text-gray-700">
                 <tr>
                   <th className="py-3 px-4">Sản phẩm</th>
                   <th className="py-3 px-4">Hình ảnh</th>
                   <th className="py-3 px-4">Kích thước</th>
                   <th className="py-3 px-4">Màu sắc</th>
-                  <th className="py-3 px-4">Số lượng</th>
-                  <th className="py-3 px-4">Giá</th>
-                  <th className="py-3 px-4">Giá giảm</th>
+                  <th className="py-3 px-4 text-center">SL</th>
+                  <th className="py-3 px-4 text-right">Giá</th>
+                  <th className="py-3 px-4 text-right">Giá giảm</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="divide-y divide-gray-200">
                 {order.orderItems?.length > 0 ? (
                   order.orderItems.map((item) => (
-                    <tr key={item.productId} className="border-b hover:bg-gray-50">
-                      <td className="py-4 px-4">{item.name || "N/A"}</td>
-                      <td className="py-4 px-4">
+                    <tr key={item.productId} className="hover:bg-gray-50">
+                      <td className="py-3 px-4 font-medium">
+                        {item.name || "N/A"}
+                      </td>
+                      <td className="py-3 px-4">
                         {item.image ? (
-                          <img src={item.image} alt={item.name} className="w-16 h-16 object-cover rounded" />
+                          <img
+                            src={item.image}
+                            alt={item.name}
+                            className="w-14 h-14 object-cover rounded-md"
+                          />
                         ) : (
-                          "Không có hình ảnh"
+                          <span className="text-gray-400 text-xs">
+                            Không có
+                          </span>
                         )}
                       </td>
-                      <td className="py-4 px-4">{item.size || "N/A"}</td>
-                      <td className="py-4 px-4">{item.color || "N/A"}</td>
-                      <td className="py-4 px-4">{item.quantity || 0}</td>
-                      <td className="py-4 px-4">{item.price?.toLocaleString("vi-VN") || 0} VND</td>
-                      <td className="py-4 px-4">
-                        {item.discountPrice ? item.discountPrice.toLocaleString("vi-VN") : "N/A"} VND
+                      <td className="py-3 px-4">{item.size || "—"}</td>
+                      <td className="py-3 px-4">{item.color || "—"}</td>
+                      <td className="py-3 px-4 text-center font-medium">
+                        {item.quantity || 0}
+                      </td>
+                      <td className="py-3 px-4 text-right">
+                        {item.price?.toLocaleString("vi-VN") || 0} ₫
+                      </td>
+                      <td className="py-3 px-4 text-right text-green-600">
+                        {item.discountPrice > 0
+                          ? item.discountPrice.toLocaleString("vi-VN") + " ₫"
+                          : "—"}
                       </td>
                     </tr>
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={7} className="py-4 px-4 text-center text-gray-500">
-                      Không có sản phẩm nào trong đơn hàng
+                    <td colSpan={7} className="py-8 text-center text-gray-500">
+                      Không có sản phẩm
                     </td>
                   </tr>
                 )}
@@ -153,17 +269,21 @@ const OrderDetailPage = () => {
         </div>
 
         {/* Tổng giá */}
-        <div className="mb-6">
-          <h3 className="text-lg font-semibold mb-2">Tổng giá</h3>
-          <p><strong>Tổng:</strong> {order.totalPrice?.toLocaleString("vi-VN") || 0} VND</p>
+        <div className="mb-8 p-4 bg-gray-50 rounded-lg">
+          <div className="flex justify-between items-center">
+            <h3 className="text-lg font-semibold">Tổng cộng</h3>
+            <p className="text-xl font-bold text-green-600">
+              {order.totalPrice?.toLocaleString("vi-VN") || 0} ₫
+            </p>
+          </div>
         </div>
 
         {/* Nút quay lại */}
         <button
           onClick={() => navigate("/admin/orders")}
-          className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
+          className="bg-gray-600 text-white px-6 py-2.5 rounded-lg hover:bg-gray-700 transition"
         >
-          Quay lại
+          ← Quay lại danh sách
         </button>
       </div>
     </div>

@@ -1,3 +1,4 @@
+// backend/models/Order.js
 const mongoose = require("mongoose");
 
 const orderItemSchema = new mongoose.Schema(
@@ -7,28 +8,13 @@ const orderItemSchema = new mongoose.Schema(
       ref: "Product",
       required: true,
     },
-    name: {
-      type: String,
-      required: true,
-    },
-    image: {
-      type: String,
-      required: true,
-    },
-    price: {
-      type: Number,
-      required: true,
-    },
-    discountPrice: {
-      type: Number, // Thêm trường discountPrice
-      default: 0, // Giá trị mặc định là 0 nếu không có giảm giá
-    },
+    name: { type: String, required: true },
+    image: { type: String, required: true },
+    price: { type: Number, required: true },
+    discountPrice: { type: Number, default: 0 },
     size: String,
     color: String,
-    quantity: {
-      type: Number,
-      required: true,
-    },
+    quantity: { type: Number, required: true },
   },
   { _id: false }
 );
@@ -45,37 +31,21 @@ const orderSchema = new mongoose.Schema(
       address: { type: String, required: true },
       city: { type: String, required: true },
     },
-    paymentMethod: {
-      type: String,
-      required: true,
-    },
-    totalPrice: {
-      type: Number,
-      required: true,
-    },
-    isPaid: {
-      type: Boolean,
-      default: false,
-    },
-    paidAt: {
-      type: Date,
-    },
-    isDelivered: {
-      type: Boolean,
-      default: false,
-    },
-    deliveredAt: {
-      type: Date,
-    },
-    paymentStatus: {
-      type: String,
-      default: "pending",
-    },
+    paymentMethod: { type: String, required: true },
+    totalPrice: { type: Number, required: true },
+    isPaid: { type: Boolean, default: false },
+    paidAt: { type: Date },
+    isDelivered: { type: Boolean, default: false },
+    deliveredAt: { type: Date },
+    paymentStatus: { type: String, default: "pending" },
     status: {
       type: String,
       enum: ["Processing", "Shipped", "Delivered", "Cancelled"],
       default: "Processing",
     },
+    // --- THÊM LÝ DO HỦY ---
+    cancelReason: { type: String },
+    cancelledAt: { type: Date },
   },
   { timestamps: true }
 );
