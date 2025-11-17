@@ -9,8 +9,21 @@ import {
 const CartContents = ({ cart = { products: [] }, userId, guestId }) => {
   const dispatch = useDispatch();
 
-  const handleAddToCart = (productId, delta, quantity, size, color, countInStock) => {
+  const handleAddToCart = (
+    productId,
+    delta,
+    quantity,
+    size,
+    color,
+    countInStock
+  ) => {
+    if (countInStock === 0) {
+      alert("Sản phẩm đã hết hàng và sẽ sớm bị xóa khỏi giỏ.");
+      return;
+    }
+
     const newQuantity = quantity + delta;
+
     if (newQuantity >= 1 && newQuantity <= countInStock) {
       dispatch(
         updateCartItemQuantity({
@@ -23,7 +36,7 @@ const CartContents = ({ cart = { products: [] }, userId, guestId }) => {
         })
       );
     } else if (newQuantity > countInStock) {
-      alert(`Số lượng tối đa cho sản phẩm này là ${countInStock}`);
+      alert(`Chỉ còn ${countInStock} sản phẩm trong kho.`);
     }
   };
 
@@ -49,13 +62,20 @@ const CartContents = ({ cart = { products: [] }, userId, guestId }) => {
               className="w-20 h-24 object-cover mr-4 rounded"
             />
             <div>
-              <h3 className="text-lg font-medium">{product.name || "Sản phẩm không xác định"}</h3>
+              <h3 className="text-lg font-medium">
+                {product.name || "Sản phẩm không xác định"}
+              </h3>
               <p className="text-sm text-gray-500">
                 Kích thước: {product.size} | Màu sắc: {product.color}
               </p>
               <p className="text-sm text-gray-500">
                 Tồn kho: {product.countInStock || "Không xác định"}
               </p>
+              {product.countInStock === 0 && (
+                <p className="text-xs text-red-600 font-medium mt-1">
+                  Hết hàng
+                </p>
+              )}
               <div className="flex items-center mt-2">
                 <button
                   onClick={() =>
@@ -69,7 +89,7 @@ const CartContents = ({ cart = { products: [] }, userId, guestId }) => {
                     )
                   }
                   className="border rounded px-2 py-1 text-xl font-medium disabled:opacity-50"
-                  disabled={product.quantity <= 1}
+                  disabled={product.quantity <= 1 || product.countInStock === 0}
                 >
                   -
                 </button>
@@ -86,7 +106,10 @@ const CartContents = ({ cart = { products: [] }, userId, guestId }) => {
                     )
                   }
                   className="border rounded px-2 py-1 text-xl font-medium disabled:opacity-50"
-                  disabled={product.quantity >= product.countInStock}
+                  disabled={
+                    product.quantity >= product.countInStock ||
+                    product.countInStock === 0
+                  }
                 >
                   +
                 </button>

@@ -270,37 +270,45 @@ router.get("/", async (req, res) => {
   const { userId, guestId } = req.query;
 
   try {
-    // Kiểm tra dữ liệu đầu vào
     if (!userId && !guestId) {
-      return res
-        .status(400)
-        .json({ message: "Cần cung cấp userId hoặc guestId" });
+      return res.status(400).json({ message: "Cần cung cấp userId hoặc guestId" });
     }
     if (userId && !mongoose.Types.ObjectId.isValid(userId)) {
       return res.status(400).json({ message: "userId không hợp lệ" });
     }
 
-    const cart = await getCart(userId, guestId);
-    if (cart) {
-      // Cập nhật countInStock cho tất cả sản phẩm trong giỏ hàng
-      for (const item of cart.products) {
-        const product = await Product.findById(item.productId);
-        if (product) {
-          item.countInStock = product.countInStock;
-        } else {
-          item.countInStock = 0; // Nếu sản phẩm không tồn tại, đặt countInStock về 0
-        }
-      }
-      await cart.save();
-      return res.status(200).json(cart);
-    } else {
+    let cart = await getCart(userId, guestId);
+    if (!cart) {
       return res.status(200).json({ products: [], totalPrice: 0 });
     }
+
+    // === TỰ ĐỘNG XÓA SẢN PHẨM HẾT HÀNG ===
+    const removedItems = [];
+    for (let i = cart.products.length - 1; i >= 0; i--) {
+      const item = cart.products[i];
+      const product = await Product.findById(item.productId);
+
+      if (!product || product.countInStock === 0) {
+        removedItems.push(item.name || item.productId);
+        cart.products.splice(i, 1);
+      } else {
+        item.countInStock = product.countInStock;
+      }
+    }
+
+    // Tính lại tổng giá
+    cart.totalPrice = cart.products.reduce(
+      (acc, item) => acc + (item.discountPrice || item.price) * item.quantity,
+      0
+    );
+
+    await cart.save();
+
+    // Trả về giỏ hàng đã được dọn dẹp
+    res.status(200).json(cart);
   } catch (error) {
     console.error("Lỗi trong GET /api/cart:", error.message, error.stack);
-    return res
-      .status(500)
-      .json({ message: "Lỗi máy chủ", error: error.message });
+    return res.status(500).json({ message: "Lỗi máy chủ", error: error.message });
   }
 });
 
