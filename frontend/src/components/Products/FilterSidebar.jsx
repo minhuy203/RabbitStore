@@ -80,9 +80,9 @@ const FilterSidebar = () => {
       material: params.material ? params.material.split(",") : [],
       brand: params.brand ? params.brand.split(",") : [],
       minPrice: params.minPrice || 0,
-      maxPrice: params.maxPrice || 10000000,
+      maxPrice: params.maxPrice || 2000000,
     });
-    setPriceRange([0, params.maxPrice || 10000000]);
+    setPriceRange([0, params.maxPrice || 2000000]);
   }, [searchParams]);
 
   const handleFilterChange = (e) => {
