@@ -12,10 +12,10 @@ const FilterSidebar = () => {
     material: [],
     brand: [],
     minPrice: 0,
-    maxPrice: 10000000,
+    maxPrice: 2000000,
   });
 
-  const [priceRange, setPriceRange] = useState([0, 10000000]);
+  const [priceRange, setPriceRange] = useState([0, 2000000]);
 
   const categories = ["Phần Trên", "Phần Dưới"];
   const colors = [
@@ -254,7 +254,7 @@ const FilterSidebar = () => {
           type="range"
           name="priceRange"
           min={0}
-          max={10000000}
+          max={2000000}
           step={50000}
           value={priceRange[1]}
           onChange={handlePriceChange}
