@@ -8,8 +8,34 @@ import {
   updateUser,
 } from "../../redux/slices/adminSlice";
 import Pagination from "../Common/Pagination";
-import { toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+
+// Component thông báo tự làm (không cần thư viện)
+const Notification = ({ message, type = "success", onClose }) => {
+  useEffect(() => {
+    const timer = setTimeout(onClose, 4000);
+    return () => clearTimeout(timer);
+  }, [onClose]);
+
+  return (
+    <div className={`fixed top-4 right-4 z-50 animate-slide-in-right`}>
+      <div
+        className={`px-6 py-4 rounded-lg shadow-2xl flex items-center gap-3 text-white font-medium ${
+          type === "success"
+            ? "bg-gradient-to-r from-green-500 to-emerald-600"
+            : type === "error"
+            ? "bg-gradient-to-r from-red-500 to-rose-600"
+            : "bg-gradient-to-r from-blue-500 to-indigo-600"
+        }`}
+      >
+        <span>{type === "success" ? "Check" : type === "error" ? "Warning" : "Info"}</span>
+        <span>{message}</span>
+        <button onClick={onClose} className="ml-4 text-white hover:opacity-70">
+          X
+        </button>
+      </div>
+    </div>
+  );
+};
 
 const UserManagement = () => {
   const dispatch = useDispatch();
@@ -28,6 +54,15 @@ const UserManagement = () => {
     role: "customer",
   });
 
+  // State cho thông báo
+  const [notification, setNotification] = useState(null);
+
+  const showNotification = (message, type = "success") => {
+    setNotification({ message, type });
+  };
+
+  const closeNotification = () => setNotification(null);
+
   useEffect(() => {
     if (!user || user.role !== "admin") {
       navigate("/");
@@ -44,22 +79,22 @@ const UserManagement = () => {
     e.preventDefault();
 
     if (!formData.name.trim() || !formData.email.trim() || !formData.password) {
-      toast.error("Vui lòng điền đầy đủ các trường bắt buộc!");
+      showNotification("Vui lòng điền đầy đủ thông tin!", "error");
       return;
     }
     if (formData.password.length < 6) {
-      toast.error("Mật khẩu phải có ít nhất 6 ký tự!");
+      showNotification("Mật khẩu phải có ít nhất 6 ký tự!", "error");
       return;
     }
 
     const result = await dispatch(addUser(formData));
 
     if (addUser.fulfilled.match(result)) {
-      toast.success(`Thêm người dùng "${formData.name}" thành công!`);
+      showNotification(`Đã thêm người dùng "${formData.name}" thành công!`);
       setFormData({ name: "", email: "", password: "", role: "customer" });
       dispatch(fetchUsers());
     } else {
-      toast.error(result.payload || "Thêm người dùng thất bại!");
+      showNotification(result.payload || "Thêm người dùng thất bại!", "error");
     }
   };
 
@@ -78,9 +113,9 @@ const UserManagement = () => {
 
     if (updateUser.fulfilled.match(result)) {
       const roleText = newRole === "admin" ? "Quản trị viên" : "Khách hàng";
-      toast.success(`${targetUser.name} → Đã chuyển thành ${roleText}`);
+      showNotification(`${targetUser.name} → Đã chuyển thành ${roleText}`);
     } else {
-      toast.error("Cập nhật vai trò thất bại!");
+      showNotification("Cập nhật vai trò thất bại!", "error");
     }
   };
 
@@ -88,13 +123,13 @@ const UserManagement = () => {
     const targetUser = users.find((u) => u._id === userId);
     if (!targetUser) return;
 
-    if (window.confirm(`Xóa người dùng "${targetUser.name}"?\nHành động này không thể hoàn tác!`)) {
+    if (window.confirm(`Bạn có chắc muốn xóa người dùng "${targetUser.name}"?\nHành động này không thể hoàn tác!`)) {
       dispatch(deleteUser(userId)).then((action) => {
         if (deleteUser.fulfilled.match(action)) {
-          toast.success(`Đã xóa "${targetUser.name}" thành công!`);
+          showNotification(`Đã xóa người dùng "${targetUser.name}" thành công!`);
           dispatch(fetchUsers());
         } else {
-          toast.error("Xóa người dùng thất bại!");
+          showNotification("Xóa người dùng thất bại!", "error");
         }
       });
     }
@@ -109,10 +144,18 @@ const UserManagement = () => {
 
   return (
     <div className="max-w-7xl mx-auto p-6 bg-gray-50 min-h-screen">
+      {/* Thông báo tự làm */}
+      {notification && (
+        <Notification
+          message={notification.message}
+          type={notification.type}
+          onClose={closeNotification}
+        />
+      )}
 
       <h2 className="text-3xl font-bold text-gray-800 mb-8 text-center">Quản lý người dùng</h2>
 
-      {/* Form thêm người dùng */}
+      {/* Form thêm người dùng - ĐÚNG NHƯ BẠN MUỐN */}
       <div className="p-8 rounded-xl mb-8 bg-gradient-to-r from-blue-50 to-indigo-50 border shadow-lg">
         <h3 className="text-xl font-bold mb-6 text-gray-800">Thêm người dùng mới</h3>
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -173,6 +216,7 @@ const UserManagement = () => {
               className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none transition"
             >
               <option value="customer">Khách hàng</option>
+
               <option value="admin">Quản trị viên</option>
             </select>
           </div>
@@ -275,5 +319,18 @@ const UserManagement = () => {
     </div>
   );
 };
+
+// Thêm animation vào tailwind (nếu chưa có)
+const style = document.createElement("style");
+style.textContent = `
+  @keyframes slideInRight {
+    from { transform: translateX(100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+  }
+  .animate-slide-in-right {
+    animation: slideInRight 0.4s ease-out;
+  }
+`;
+document.head.appendChild(style);
 
 export default UserManagement;
