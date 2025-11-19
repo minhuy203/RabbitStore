@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import login from "../assets/login.webp";
+import loginImg from "../assets/login.webp";
 import { loginUser, clearError } from "../redux/slices/authSlice";
 import { fetchCart, mergeCart } from "../redux/slices/cartSlice";
 import { useDispatch, useSelector } from "react-redux";
@@ -46,72 +46,77 @@ const Login = () => {
   };
 
   return (
-    <div className="flex min-h-screen">
-      <div className="w-full md:w-1/2 flex items-center justify-center p-4 bg-gray-50">
-        <form
-          onSubmit={handleSubmit}
-          className="w-full max-w-sm bg-white rounded-2xl shadow-2xl border p-7 space-y-5"
-        >
-          <div className="text-center">
-            <h2 className="text-2xl font-bold text-gray-800">RabbitStore</h2>
-            <p className="text-2xl font-bold mt-2">Chào mừng quay lại!</p>
-          </div>
-
-          {(error || cartError) && (
-            <div className="bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-2.5 rounded-lg text-center">
-              {error || cartError}
+    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="flex w-full max-w-5xl shadow-2xl rounded-2xl overflow-hidden">
+        {/* Cột trái: Form - đã thu gọn cực mạnh */}
+        <div className="w-full lg:w-1/2 p-8 bg-white flex flex-col justify-center">
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <div className="text-center mb-4">
+              <h2 className="text-2xl font-bold text-gray-800">RabbitStore</h2>
+              <p className="text-xl font-bold mt-1">Chào mừng quay lại!</p>
             </div>
-          )}
 
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => { setEmail(e.target.value); dispatch(clearError()); }}
-            className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-black focus:outline-none"
-            placeholder="you@example.com"
-            required
-          />
+            {(error || cartError) && (
+              <div className="bg-red-50 border border-red-200 text-red-700 text-xs px-3 py-2 rounded text-center">
+                {error || cartError}
+              </div>
+            )}
 
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => { setPassword(e.target.value); dispatch(clearError()); }}
-            className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-black focus:outline-none"
-            placeholder="••••••••"
-            required
-          />
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => { setEmail(e.target.value); dispatch(clearError()); }}
+              className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-black text-sm"
+              placeholder="you@example.com"
+              required
+            />
 
-          {/* Giữ nguyên hộp gợi ý màu vàng */}
-          <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-xs">
-            <p className="font-semibold text-amber-800 mb-1">Gợi ý:</p>
-            <ul className="text-amber-700 space-y-0.5 list-disc pl-4">
-              <li>Quên mật khẩu? Liên hệ admin để được hỗ trợ</li>
-              <li>Đảm bảo nhập đúng email đã đăng ký</li>
-            </ul>
-          </div>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => { setPassword(e.target.value); dispatch(clearError()); }}
+              className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-black text-sm"
+              placeholder="••••••••"
+              required
+            />
 
-          <button
-            type="submit"
-            className="w-full bg-black text-white py-3.5 rounded-lg font-bold hover:bg-gray-900 transition"
-          >
-            Đăng nhập
-          </button>
+            {/* Giữ nguyên hộp gợi ý */}
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-xs">
+              <p className="font-semibold text-amber-800 mb-1">Gợi ý:</p>
+              <ul className="text-amber-700 space-y-0.5 list-disc pl-4">
+                <li>Quên mật khẩu? Liên hệ admin để được hỗ trợ</li>
+                <li>Đảm bảo nhập đúng email đã đăng ký</li>
+              </ul>
+            </div>
 
-          <p className="text-center text-sm text-gray-600 -mt-1">
-            Chưa có tài khoản?{" "}
-            <Link
-              to={`/register?redirect=${encodeURIComponent(redirect)}`}
-              className="text-blue-600 font-semibold hover:underline"
+            <button
+              type="submit"
+              className="w-full bg-black text-white py-3.5 rounded-lg font-bold hover:bg-gray-900"
             >
-              Đăng ký ngay
-            </Link>
-          </p>
-        </form>
-      </div>
+              Đăng nhập
+            </button>
 
-      <div className="hidden md:block w-1/2 relative overflow-hidden">
-        <img src={login} alt="Login" className="w-full h-full object-cover" />
-        <div className="absolute inset-0 bg-black/30" />
+            <p className="text-center text-sm text-gray-600">
+              Chưa có tài khoản?{" "}
+              <Link
+                to={`/register?redirect=${encodeURIComponent(redirect)}`}
+                className="text-blue-600 font-semibold hover:underline"
+              >
+                Đăng ký ngay
+              </Link>
+            </p>
+          </form>
+        </div>
+
+        {/* Cột phải: Ảnh - thu gọn theo chiều cao form */}
+        <div className="hidden lg:block w-1/2 relative overflow-hidden bg-gray-900">
+          <img
+            src={loginImg}
+            alt="Login"
+            className="absolute inset-0 w-full h-full object-cover opacity-90"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+        </div>
       </div>
     </div>
   );

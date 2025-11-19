@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import register from "../assets/register.webp";
+import registerImg from "../assets/register.webp";
 import { registerUser, clearError } from "../redux/slices/authSlice";
 import { mergeCart } from "../redux/slices/cartSlice";
 import { useDispatch, useSelector } from "react-redux";
@@ -49,14 +49,9 @@ const Register = () => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    if (name === "name") {
-      setName(value);
-      setNameError(validateName(value));
-    } else if (name === "email") setEmail(value);
-    else if (name === "password") {
-      setPassword(value);
-      setPasswordError(validatePassword(value));
-    }
+    if (name === "name") { setName(value); setNameError(validateName(value)); }
+    else if (name === "email") setEmail(value);
+    else if (name === "password") { setPassword(value); setPasswordError(validatePassword(value)); }
     dispatch(clearError());
   };
 
@@ -64,103 +59,74 @@ const Register = () => {
     e.preventDefault();
     const nameErr = validateName(name);
     const passErr = validatePassword(password);
-
     if (nameErr || passErr || !email.includes("@")) {
       setNameError(nameErr);
       setPasswordError(passErr);
       return;
     }
-
-    dispatch(registerUser({
-      name: name.trim(),
-      email: email.toLowerCase().trim(),
-      password
-    }));
+    dispatch(registerUser({ name: name.trim(), email: email.toLowerCase().trim(), password }));
   };
 
   return (
-    <div className="flex min-h-screen">
-      <div className="w-full md:w-1/2 flex items-center justify-center p-4 bg-gray-50">
-        <form
-          onSubmit={handleSubmit}
-          className="w-full max-w-sm bg-white rounded-2xl shadow-2xl border p-7 space-y-4"
-        >
-          <div className="text-center">
-            <h2 className="text-2xl font-bold text-gray-800">RabbitStore</h2>
-            <p className="text-2xl font-bold mt-2">Tạo tài khoản mới</p>
-          </div>
-
-          {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-2.5 rounded-lg text-center">
-              {error}
+    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="flex w-full max-w-5xl shadow-2xl rounded-2xl overflow-hidden">
+        {/* Form bên trái */}
+        <div className="w-full lg:w-1/2 p-8 bg-white flex flex-col justify-center">
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <div className="text-center mb-4">
+              <h2 className="text-2xl font-bold text-gray-800">RabbitStore</h2>
+              <p className="text-xl font-bold mt-1">Tạo tài khoản mới</p>
             </div>
-          )}
 
-          <div>
-            <input
-              type="text"
-              name="name"
-              value={name}
-              onChange={handleChange}
-              placeholder="Họ và tên"
-              className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-black focus:outline-none text-sm"
-            />
-            {nameError && <p className="text-red-500 text-xs mt-1">{nameError}</p>}
-          </div>
+            {error && (
+              <div className="bg-red-50 border border-red-200 text-red-700 text-xs px-3 py-2 rounded text-center">
+                {error}
+              </div>
+            )}
 
-          <input
-            type="email"
-            name="email"
-            value={email}
-            onChange={handleChange}
-            placeholder="you@example.com"
-            className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-black focus:outline-none text-sm"
-          />
+            <div>
+              <input type="text" name="name" value={name} onChange={handleChange}
+                placeholder="Họ và tên" className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-black text-sm" />
+              {nameError && <p className="text-red-500 text-xs mt-1">{nameError}</p>}
+            </div>
 
-          <div>
-            <input
-              type="password"
-              name="password"
-              value={password}
-              onChange={handleChange}
-              placeholder="Mật khẩu"
-              className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-black focus:outline-none text-sm"
-            />
-            {passwordError && <p className="text-red-500 text-xs mt-1">{passwordError}</p>}
-          </div>
+            <input type="email" name="email" value={email} onChange={handleChange}
+              placeholder="you@example.com" className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-black text-sm" />
 
-          {/* Giữ nguyên hộp gợi ý màu xanh */}
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-xs">
-            <p className="font-semibold text-blue-800 mb-1">Yêu cầu bắt buộc:</p>
-            <ul className="text-blue-700 space-y-0.5 list-disc pl-4">
-              <li>Họ tên không chứa số hoặc ký tự đặc biệt</li>
-              <li>Mật khẩu từ 6 ký tự trở lên</li>
-              <li>Email phải hợp lệ và chưa từng đăng ký</li>
-            </ul>
-          </div>
+            <div>
+              <input type="password" name="password" value={password} onChange={handleChange}
+                placeholder="Mật khẩu" className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-black text-sm" />
+              {passwordError && <p className="text-red-500 text-xs mt-1">{passwordError}</p>}
+            </div>
 
-          <button
-            type="submit"
-            className="w-full bg-black text-white py-3.5 rounded-lg font-bold hover:bg-gray-900 transition"
-          >
-            Đăng ký ngay
-          </button>
+            {/* Giữ nguyên hộp gợi ý */}
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-xs">
+              <p className="font-semibold text-blue-800 mb-1">Yêu cầu bắt buộc:</p>
+              <ul className="text-blue-700 space-y-0.5 list-disc pl-4">
+                <li>Họ tên không chứa số hoặc ký tự đặc biệt</li>
+                <li>Mật khẩu từ 6 ký tự trở lên</li>
+                <li>Email phải hợp lệ và chưa từng đăng ký</li>
+              </ul>
+            </div>
 
-          <p className="text-center text-sm text-gray-600 -mt-2">
-            Đã có tài khoản?{" "}
-            <Link
-              to={`/login?redirect=${encodeURIComponent(redirect)}`}
-              className="text-blue-600 font-semibold hover:underline"
-            >
-              Đăng nhập tại đây
-            </Link>
-          </p>
-        </form>
-      </div>
+            <button type="submit" className="w-full bg-black text-white py-3.5 rounded-lg font-bold hover:bg-gray-900">
+              Đăng ký ngay
+            </button>
 
-      <div className="hidden md:block w-1/2 relative overflow-hidden">
-        <img src={register} alt="Register" className="w-full h-full object-cover" />
-        <div className="absolute inset-0 bg-black/30" />
+            <p className="text-center text-sm text-gray-600">
+              Đã có tài khoản?{" "}
+              <Link to={`/login?redirect=${encodeURIComponent(redirect)}`} className="text-blue-600 font-semibold hover:underline">
+                Đăng nhập tại đây
+              </Link>
+            </p>
+          </form>
+        </div>
+
+        {/* Ảnh bên phải - tự động co theo chiều cao form */}
+        <div className="hidden lg:block w-1/2 relative overflow-hidden bg-gray-900">
+          <img src={registerImg} alt="Register" className="absolute inset-0 w-full h-full object-cover opacity-90" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+        </div>
       </div>
     </div>
   );
