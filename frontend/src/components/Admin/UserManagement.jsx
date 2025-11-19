@@ -8,7 +8,7 @@ import {
   updateUser,
 } from "../../redux/slices/adminSlice";
 import Pagination from "../Common/Pagination";
-import { toast, ToastContainer } from "react-toastify";
+import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
 const UserManagement = () => {
@@ -43,7 +43,6 @@ const UserManagement = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Validate cơ bản
     if (!formData.name.trim() || !formData.email.trim() || !formData.password) {
       toast.error("Vui lòng điền đầy đủ các trường bắt buộc!");
       return;
@@ -110,11 +109,10 @@ const UserManagement = () => {
 
   return (
     <div className="max-w-7xl mx-auto p-6 bg-gray-50 min-h-screen">
-      <ToastContainer position="top-right" autoClose={3000} theme="colored" />
 
       <h2 className="text-3xl font-bold text-gray-800 mb-8 text-center">Quản lý người dùng</h2>
 
-      {/* Form thêm người dùng mới - ĐÚNG NHƯ BẠN YÊU CẦU */}
+      {/* Form thêm người dùng */}
       <div className="p-8 rounded-xl mb-8 bg-gradient-to-r from-blue-50 to-indigo-50 border shadow-lg">
         <h3 className="text-xl font-bold mb-6 text-gray-800">Thêm người dùng mới</h3>
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -215,7 +213,7 @@ const UserManagement = () => {
             <tbody className="divide-y divide-gray-200">
               {loading ? (
                 <tr>
-                  <td colSpan="5" className="text-center py-10 text-gray-500">
+                  <td colSpan="5" className="text-center py-12 text-gray-500">
                     Đang tải danh sách người dùng...
                   </td>
                 </tr>
