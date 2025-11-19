@@ -264,8 +264,7 @@ router.delete("/", async (req, res) => {
 });
 
 // @route GET /api/cart
-// @desc Get logged-in user's or guest user's cart
-// @access Public
+// @desc Get cart + TỰ ĐỘNG ĐIỀU CHỈNH số lượng nếu vượt tồn kho
 router.get("/", async (req, res) => {
   const { userId, guestId } = req.query;
 
@@ -282,17 +281,46 @@ router.get("/", async (req, res) => {
       return res.status(200).json({ products: [], totalPrice: 0 });
     }
 
-    // === TỰ ĐỘNG XÓA SẢN PHẨM HẾT HÀNG ===
+    let hasChanges = false;
     const removedItems = [];
+    const adjustedItems = [];
+
+    // Duyệt ngược để có thể xóa an toàn
     for (let i = cart.products.length - 1; i >= 0; i--) {
       const item = cart.products[i];
-      const product = await Product.findById(item.productId);
+      const product = await Product.findById(item.productId).select('countInStock name');
 
-      if (!product || product.countInStock === 0) {
+      // Nếu sản phẩm không tồn tại → xóa
+      if (!product) {
         removedItems.push(item.name || item.productId);
         cart.products.splice(i, 1);
-      } else {
-        item.countInStock = product.countInStock;
+        hasChanges = true;
+        continue;
+      }
+
+      // Cập nhật tồn kho mới nhất
+      const currentStock = product.countInStock;
+
+      if (currentStock === 0) {
+        // Hết hàng → xóa khỏi giỏ
+        removedItems.push(item.name || "Sản phẩm");
+        cart.products.splice(i, 1);
+        hasChanges = true;
+      } 
+      else if (item.quantity > currentStock) {
+        // Vượt tồn kho → điều chỉnh về tối đa còn lại
+        adjustedItems.push({
+          name: item.name || "Sản phẩm",
+          oldQty: item.quantity,
+          newQty: currentStock
+        });
+        item.quantity = currentStock;
+        item.countInStock = currentStock;
+        hasChanges = true;
+      } 
+      else {
+        // Còn hàng và số lượng hợp lệ → chỉ cập nhật tồn kho mới
+        item.countInStock = currentStock;
       }
     }
 
@@ -304,11 +332,19 @@ router.get("/", async (req, res) => {
 
     await cart.save();
 
-    // Trả về giỏ hàng đã được dọn dẹp
-    res.status(200).json(cart);
+    // Trả về giỏ hàng + thông tin điều chỉnh (nếu có)
+    res.status(200).json({
+      ...cart.toObject(),
+      adjusted: hasChanges,
+      notifications: {
+        removed: removedItems.length > 0 ? removedItems : null,
+        adjusted: adjustedItems.length > 0 ? adjustedItems : null,
+      }
+    });
+
   } catch (error) {
     console.error("Lỗi trong GET /api/cart:", error.message, error.stack);
-    return res.status(500).json({ message: "Lỗi máy chủ", error: error.message });
+    return res.status(500).json({ message: "Lỗi máy chủ" });
   }
 });
 
