@@ -56,7 +56,6 @@ const UserManagement = () => {
 
   const [notification, setNotification] = useState(null);
 
-  // Hàm hiển thị thông báo an toàn (luôn là string)
   const showNotification = (msg, type = "success") => {
     const message =
       typeof msg === "object" && msg !== null
@@ -82,44 +81,19 @@ const UserManagement = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // === VALIDATION NHƯ TRANG REGISTER ===
     const nameRegex = /^[\p{L}\s]+$/u;
     const passwordRegex = /^[a-zA-Z0-9]+$/;
 
-    if (!formData.name.trim()) {
-      showNotification("Họ và tên không ?? để trống!", "error");
-      return;
-    }
-    if (formData.name.trim().length < 2) {
-      showNotification("Họ và tên phải có ít nhất 2 ký tự!", "error");
-      return;
-    }
-    if (!nameRegex.test(formData.name.trim())) {
-      showNotification("Tên chỉ được chứa chữ cái và khoảng trắng!", "error");
-      return;
-    }
+    if (!formData.name.trim()) return showNotification("Họ và tên không được để trống!", "error");
+    if (formData.name.trim().length < 2) return showNotification("Tên phải ≥ 2 ký tự!", "error");
+    if (!nameRegex.test(formData.name.trim())) return showNotification("Tên chỉ chứa chữ cái và khoảng trắng!", "error");
 
-    if (!formData.email.trim()) {
-      showNotification("Email không được để trống!", "error");
-      return;
-    }
-    if (!/^\S+@\S+\.\S+$/.test(formData.email.trim())) {
-      showNotification("Email không hợp lệ!", "error");
-      return;
-    }
+    if (!formData.email.trim()) return showNotification("Email không được để trống!", "error");
+    if (!/^\S+@\S+\.\S+$/.test(formData.email.trim())) return showNotification("Email không hợp lệ!", "error");
 
-    if (!formData.password) {
-      showNotification("Mật khẩu không được để trống!", "error");
-      return;
-    }
-    if (formData.password.length < 6) {
-      showNotification("Mật khẩu phải có ít nhất 6 ký tự!", "error");
-      return;
-    }
-    if (!passwordRegex.test(formData.password)) {
-      showNotification("Mật khẩu chỉ được chứa chữ cái và số!", "error");
-      return;
-    }
+    if (!formData.password) return showNotification("Mật khẩu không được để trống!", "error");
+    if (formData.password.length < 6) return showNotification("Mật khẩu phải ≥ 6 ký tự!", "error");
+    if (!passwordRegex.test(formData.password)) return showNotification("Mật khẩu chỉ được chứa chữ cái và số!", "error");
 
     const payload = {
       name: formData.name.trim(),
@@ -131,12 +105,11 @@ const UserManagement = () => {
     const result = await dispatch(addUser(payload));
 
     if (addUser.fulfilled.match(result)) {
-      showNotification(`Đã thêm người dùng "${payload.name}" thành công!`);
+      showNotification(`Đã thêm "${payload.name}" thành công!`);
       setFormData({ name: "", email: "", password: "", role: "customer" });
       dispatch(fetchUsers());
     } else {
-      // Đây là chỗ fix lỗi #31
-      showNotification(result.payload, "error");
+      showNotification(result.payload || "Thêm người dùng thất bại!", "error");
     }
   };
 
@@ -155,9 +128,9 @@ const UserManagement = () => {
 
     if (updateUser.fulfilled.match(result)) {
       const roleText = newRole === "admin" ? "Quản trị viên" : "Khách hàng";
-      showNotification(`${targetUser.name} → Đã chuyển thành ${roleText}`);
+      showNotification(`${targetUser.name} → ${roleText}`);
     } else {
-      showNotification(result.payload || "Cập nhật vai trò thất bại!", "error");
+      showNotification(result.payload || "Cập nhật thất bại!", "error");
     }
   };
 
@@ -165,13 +138,13 @@ const UserManagement = () => {
     const targetUser = users.find((u) => u._id === userId);
     if (!targetUser) return;
 
-    if (window.confirm(`Bạn có chắc muốn xóa người dùng "${targetUser.name}"?\nHành động này không thể hoàn tác!`)) {
+    if (window.confirm(`Xóa "${targetUser.name}"? Hành động không thể hoàn tác!`)) {
       dispatch(deleteUser(userId)).then((action) => {
         if (deleteUser.fulfilled.match(action)) {
-          showNotification(`Đã xóa người dùng "${targetUser.name}" thành công!`);
+          showNotification(`Đã xóa "${targetUser.name}"`);
           dispatch(fetchUsers());
         } else {
-          showNotification(action.payload || "Xóa người dùng thất bại!", "error");
+          showNotification(action.payload || "Xóa thất bại!", "error");
         }
       });
     }
@@ -195,14 +168,17 @@ const UserManagement = () => {
         />
       )}
 
-      <h2 className="text-3xl font-bold text-gray-800 mb-8 text-center">Quản lý người dùng</h2>
+      <h2 className="text-3xl font-bold text-gray-800 mb-8 text-center">
+        Quản lý người dùng
+      </h2>
 
-      {/* Form thêm người dùng */}
-      <div className="p-8 rounded-xl mb-8 bg-gradient-to-r from-blue-50 to-indigo-50 border shadow-lg">
-        <h3 className="text-xl font-bold mb-6 text-gray-800">Thêm người dùng mới</h3>
-        <form onSubmit={handleSubmit} className="space-y-6">
+      {/* FORM THÊM NGƯỜI DÙNG - GỌN + ĐẸP */}
+      <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
+        <h3 className="text-xl font-bold text-gray-800 mb-5">Thêm người dùng mới</h3>
+
+        <form onSubmit={handleSubmit} className="grid md:grid-cols-2 gap-5">
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
               Họ và tên <span className="text-red-500">*</span>
             </label>
             <input
@@ -210,14 +186,13 @@ const UserManagement = () => {
               name="name"
               value={formData.name}
               onChange={handleChange}
-              className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none transition"
-              placeholder="Nguyễn Thị C"
+              className="w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none transition"
+              placeholder="Nguyễn Văn A"
             />
-            <p className="text-xs text-gray-500 mt-1">Chỉ chữ cái và khoảng trắng</p>
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
               Email <span className="text-red-500">*</span>
             </label>
             <input
@@ -225,14 +200,13 @@ const UserManagement = () => {
               name="email"
               value={formData.email}
               onChange={handleChange}
-              className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none transition"
+              className="w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none transition"
               placeholder="user@example.com"
             />
-            <p className="text-xs text-gray-500 mt-1">Email phải chưa tồn tại</p>
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
               Mật khẩu <span className="text-red-500">*</span>
             </label>
             <input
@@ -240,46 +214,48 @@ const UserManagement = () => {
               name="password"
               value={formData.password}
               onChange={handleChange}
-              className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none transition"
-              placeholder="Tối thiểu 6 ký tự"
+              className="w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none transition"
+              placeholder="≥ 6 ký tự"
             />
-            <p className="text-xs text-gray-500 mt-1">Chỉ chữ cái và số, ≥ 6 ký tự</p>
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">Vai trò</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Vai trò</label>
             <select
               name="role"
               value={formData.role}
               onChange={handleChange}
-              className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none transition"
+              className="w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none transition"
             >
               <option value="customer">Khách hàng</option>
               <option value="admin">Quản trị viên</option>
             </select>
           </div>
 
-          <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-4">
-            <p className="text-sm font-semibold text-indigo-800 mb-2">Lưu ý:</p>
-            <ul className="text-xs text-indigo-700 space-y-1 list-disc pl-5">
-              <li>Tên không chứa số, ký tự đặc biệt</li>
-              <li>Mật khẩu ≥ 6 ký tự, chỉ chữ và số</li>
-              <li>Email phải duy nhất</li>
-              <li>Admin có toàn quyền</li>
-            </ul>
+          <div className="md:col-span-2 flex gap-3">
+            <button
+              type="submit"
+              disabled={loading}
+              className="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-3 rounded-lg font-semibold hover:from-blue-700 hover:to-indigo-700 transition disabled:opacity-70"
+            >
+              {loading ? "Đang tạo..." : "Tạo tài khoản"}
+            </button>
+            <button
+              type="button"
+              onClick={() => setFormData({ name: "", email: "", password: "", role: "customer" })}
+              className="px-6 py-3 border border-gray-300 rounded-lg font-medium hover:bg-gray-50 transition"
+            >
+              Xóa form
+            </button>
           </div>
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-4 rounded-lg font-bold text-lg hover:from-blue-700 hover:to-indigo-700 transition shadow-md disabled:opacity-70"
-          >
-            {loading ? "Đang tạo..." : "Tạo tài khoản mới"}
-          </button>
         </form>
+
+        <div className="mt-4 text-xs text-gray-500">
+          Lưu ý: Tên chỉ chữ cái + khoảng trắng · Mật khẩu ≥ 6 ký tự, chỉ chữ/số · Email phải duy nhất
+        </div>
       </div>
 
-      {/* Bảng danh sách */}
+      {/* BẢNG DANH SÁCH */}
       <div className="bg-white rounded-xl shadow-lg overflow-hidden">
         <div className="overflow-x-auto">
           <table className="min-w-full">
@@ -358,7 +334,7 @@ const UserManagement = () => {
   );
 };
 
-// Animation cho notification
+// Animation thông báo
 const style = document.createElement("style");
 style.textContent = `
   @keyframes slideInRight {
