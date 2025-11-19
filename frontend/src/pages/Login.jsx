@@ -46,14 +46,14 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="flex w-full max-w-5xl shadow-2xl rounded-2xl overflow-hidden">
-        {/* Cột trái: Form - đã thu gọn cực mạnh */}
-        <div className="w-full lg:w-1/2 p-8 bg-white flex flex-col justify-center">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+      <div className="flex w-full max-w-4xl shadow-2xl rounded-3xl overflow-hidden bg-white">
+        {/* Form bên trái - mỏng hơn, cao hơn */}
+        <div className="w-full lg:w-[420px] p-10 flex flex-col justify-center">
           <form onSubmit={handleSubmit} className="space-y-5">
-            <div className="text-center mb-4">
+            <div className="text-center">
               <h2 className="text-2xl font-bold text-gray-800">RabbitStore</h2>
-              <p className="text-xl font-bold mt-1">Chào mừng quay lại!</p>
+              <p className="text-lg font-semibold mt-1 text-gray-700">Chào mừng quay lại!</p>
             </div>
 
             {(error || cartError) && (
@@ -66,7 +66,7 @@ const Login = () => {
               type="email"
               value={email}
               onChange={(e) => { setEmail(e.target.value); dispatch(clearError()); }}
-              className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-black text-sm"
+              className="w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-black text-sm"
               placeholder="you@example.com"
               required
             />
@@ -75,13 +75,12 @@ const Login = () => {
               type="password"
               value={password}
               onChange={(e) => { setPassword(e.target.value); dispatch(clearError()); }}
-              className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-black text-sm"
+              className="w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-black text-sm"
               placeholder="••••••••"
               required
             />
 
-            {/* Giữ nguyên hộp gợi ý */}
-            <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-xs">
+            <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs">
               <p className="font-semibold text-amber-800 mb-1">Gợi ý:</p>
               <ul className="text-amber-700 space-y-0.5 list-disc pl-4">
                 <li>Quên mật khẩu? Liên hệ admin để được hỗ trợ</li>
@@ -91,7 +90,7 @@ const Login = () => {
 
             <button
               type="submit"
-              className="w-full bg-black text-white py-3.5 rounded-lg font-bold hover:bg-gray-900"
+              className="w-full bg-black text-white py-3.5 rounded-xl font-bold hover:bg-gray-900 transition"
             >
               Đăng nhập
             </button>
@@ -108,14 +107,14 @@ const Login = () => {
           </form>
         </div>
 
-        {/* Cột phải: Ảnh - thu gọn theo chiều cao form */}
-        <div className="hidden lg:block w-1/2 relative overflow-hidden bg-gray-900">
+        {/* Ảnh bên phải - cao hơn form, đẹp lung linh */}
+        <div className="hidden lg:block relative min-h-[620px]">
           <img
             src={loginImg}
             alt="Login"
-            className="absolute inset-0 w-full h-full object-cover opacity-90"
+            className="absolute inset-0 w-full h-full object-cover"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
         </div>
       </div>
     </div>

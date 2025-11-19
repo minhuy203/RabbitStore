@@ -68,14 +68,14 @@ const Register = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="flex w-full max-w-5xl shadow-2xl rounded-2xl overflow-hidden">
-        {/* Form bên trái */}
-        <div className="w-full lg:w-1/2 p-8 bg-white flex flex-col justify-center">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+      <div className="flex w-full max-w-4xl shadow-2xl rounded-3xl overflow-hidden bg-white">
+        {/* Form mỏng hơn */}
+        <div className="w-full lg:w-[420px] p-10 flex flex-col justify-center">
           <form onSubmit={handleSubmit} className="space-y-5">
-            <div className="text-center mb-4">
+            <div className="text-center">
               <h2 className="text-2xl font-bold text-gray-800">RabbitStore</h2>
-              <p className="text-xl font-bold mt-1">Tạo tài khoản mới</p>
+              <p className="text-lg font-semibold mt-1 text-gray-700">Tạo tài khoản mới</p>
             </div>
 
             {error && (
@@ -86,21 +86,20 @@ const Register = () => {
 
             <div>
               <input type="text" name="name" value={name} onChange={handleChange}
-                placeholder="Họ và tên" className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-black text-sm" />
+                placeholder="Họ và tên" className="w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-black text-sm" />
               {nameError && <p className="text-red-500 text-xs mt-1">{nameError}</p>}
             </div>
 
             <input type="email" name="email" value={email} onChange={handleChange}
-              placeholder="you@example.com" className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-black text-sm" />
+              placeholder="you@example.com" className="w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-black text-sm" />
 
             <div>
               <input type="password" name="password" value={password} onChange={handleChange}
-                placeholder="Mật khẩu" className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-black text-sm" />
+                placeholder="Mật khẩu (tối thiểu 6 ký tự)" className="w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-black text-sm" />
               {passwordError && <p className="text-red-500 text-xs mt-1">{passwordError}</p>}
             </div>
 
-            {/* Giữ nguyên hộp gợi ý */}
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-xs">
+            <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 text-xs">
               <p className="font-semibold text-blue-800 mb-1">Yêu cầu bắt buộc:</p>
               <ul className="text-blue-700 space-y-0.5 list-disc pl-4">
                 <li>Họ tên không chứa số hoặc ký tự đặc biệt</li>
@@ -109,7 +108,7 @@ const Register = () => {
               </ul>
             </div>
 
-            <button type="submit" className="w-full bg-black text-white py-3.5 rounded-lg font-bold hover:bg-gray-900">
+            <button type="submit" className="w-full bg-black text-white py-3.5 rounded-xl font-bold hover:bg-gray-900 transition">
               Đăng ký ngay
             </button>
 
@@ -122,10 +121,10 @@ const Register = () => {
           </form>
         </div>
 
-        {/* Ảnh bên phải - tự động co theo chiều cao form */}
-        <div className="hidden lg:block w-1/2 relative overflow-hidden bg-gray-900">
-          <img src={registerImg} alt="Register" className="absolute inset-0 w-full h-full object-cover opacity-90" />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+        {/* Ảnh cao hơn, đẹp hơn */}
+        <div className="hidden lg:block relative min-h-[660px]">
+          <img src={registerImg} alt="Register" className="absolute inset-0 w-full h-full object-cover" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
         </div>
       </div>
     </div>
