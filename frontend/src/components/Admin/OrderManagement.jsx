@@ -12,7 +12,6 @@ const OrderManagement = () => {
   const { orders, loading, error } = useSelector((state) => state.adminOrders);
 
   const [currentPage, setCurrentPage] = useState(1);
-  const [searchTerm, setSearchTerm] = useState("");
   const itemsPerPage = 10;
 
   useEffect(() => {
@@ -23,37 +22,24 @@ const OrderManagement = () => {
     }
   }, [dispatch, user, navigate]);
 
-  // Lọc + sắp xếp
-  const filteredOrders = [...orders]
-    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-    .filter((order) =>
-      order._id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (order.user?.name || "").toLowerCase().includes(searchTerm.toLowerCase())
-    );
+  // Chỉ sắp xếp theo ngày mới nhất (không còn tìm kiếm)
+  const sortedOrders = [...orders].sort(
+    (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+  );
 
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentOrders = filteredOrders.slice(indexOfFirstItem, indexOfLastItem);
-  const totalPages = Math.ceil(filteredOrders.length / itemsPerPage);
+  const currentOrders = sortedOrders.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(sortedOrders.length / itemsPerPage);
 
   return (
     <div className="max-w-7xl mx-auto p-6 bg-gray-50 min-h-screen">
-      {/* Header + Search (giữ nguyên style như ProductManagement) */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
+      {/* Header - không còn ô tìm kiếm */}
+      <div className="mb-8">
         <h2 className="text-3xl font-bold text-gray-800">Quản lý đơn hàng</h2>
-        <input
-          type="text"
-          placeholder="Tìm kiếm theo ID đơn hoặc tên khách..."
-          value={searchTerm}
-          onChange={(e) => {
-            setSearchTerm(e.target.value);
-            setCurrentPage(1);
-          }}
-          className="w-full sm:w-80 px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none transition"
-        />
       </div>
 
-      {/* BẢNG CHỈNH ĐỒNG BỘ HOÀN TOÀN VỚI PRODUCTMANAGEMENT */}
+      {/* Bảng - giữ nguyên style như ProductManagement */}
       <div className="bg-white rounded-xl shadow-lg overflow-hidden">
         <div className="overflow-x-auto">
           <table className="min-w-full">
@@ -83,7 +69,10 @@ const OrderManagement = () => {
                 <tr>
                   <td colSpan="8" className="text-center py-12 text-red-600">
                     Lỗi: {error}
-                    <button onClick={() => dispatch(fetchAllOrders())} className="block mx-auto mt-3 underline hover:no-underline">
+                    <button
+                      onClick={() => dispatch(fetchAllOrders())}
+                      className="block mx-auto mt-3 underline hover:no-underline"
+                    >
                       Thử lại
                     </button>
                   </td>
@@ -141,7 +130,7 @@ const OrderManagement = () => {
               ) : (
                 <tr>
                   <td colSpan="8" className="text-center py-16 text-gray-500 text-lg">
-                    {searchTerm ? `Không tìm thấy đơn hàng nào phù hợp với "${searchTerm}"` : "Chưa có đơn hàng nào."}
+                    Chưa có đơn hàng nào.
                   </td>
                 </tr>
               )}
@@ -149,10 +138,14 @@ const OrderManagement = () => {
           </table>
         </div>
 
-        {/* Pagination giống hệt ProductManagement */}
+        {/* Phân trang */}
         {totalPages > 1 && (
           <div className="bg-gray-50 p-4 border-t">
-            <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={setCurrentPage}
+            />
           </div>
         )}
       </div>
