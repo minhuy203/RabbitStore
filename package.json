@@ -1,5 +1,6 @@
 {
   "dependencies": {
-    "flatpickr": "^4.6.13"
+    "flatpickr": "^4.6.13",
+    "react-toastify": "^11.0.5"
   }
 }

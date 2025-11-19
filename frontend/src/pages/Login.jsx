@@ -18,7 +18,6 @@ const Login = () => {
   const isCheckoutRedirect = redirect.includes("checkout");
 
   useEffect(() => {
-    // Đảm bảo guestId tồn tại
     let currentGuestId = guestId || localStorage.getItem("guestId");
     if (!currentGuestId) {
       currentGuestId = "guest_" + new Date().getTime();
@@ -26,127 +25,114 @@ const Login = () => {
     }
 
     if (user) {
-      // Gọi mergeCart nếu có guestId và giỏ hàng không rỗng
       if (currentGuestId && cart?.products?.length > 0) {
         dispatch(mergeCart({ guestId: currentGuestId }))
           .unwrap()
-          .then(() => {
-            // Lấy giỏ hàng người dùng sau khi hợp nhất
-            dispatch(fetchCart({ userId: user._id }))
-              .unwrap()
-              .then(() => {
-                navigate(isCheckoutRedirect ? "/checkout" : "/");
-              })
-              .catch((err) => {
-                console.error("Lỗi khi lấy giỏ hàng:", err);
-              });
-          })
-          .catch((err) => {
-            console.error("Lỗi khi hợp nhất giỏ hàng:", err);
-            // Vẫn lấy giỏ hàng người dùng nếu hợp nhất thất bại
-            dispatch(fetchCart({ userId: user._id }))
-              .unwrap()
-              .then(() => {
-                navigate(isCheckoutRedirect ? "/checkout" : "/");
-              })
-              .catch((err) => {
-                console.error("Lỗi khi lấy giỏ hàng:", err);
-              });
-          });
+          .then(() => dispatch(fetchCart({ userId: user._id })))
+          .finally(() => navigate(isCheckoutRedirect ? "/checkout" : "/"));
       } else {
-        // Lấy giỏ hàng người dùng nếu không có giỏ hàng khách
-        dispatch(fetchCart({ userId: user._id }))
-          .unwrap()
-          .then(() => {
-            navigate(isCheckoutRedirect ? "/checkout" : "/");
-          })
-          .catch((err) => {
-            console.error("Lỗi khi lấy giỏ hàng:", err);
-          });
+        dispatch(fetchCart({ userId: user._id })).finally(() =>
+          navigate(isCheckoutRedirect ? "/checkout" : "/")
+        );
       }
     }
   }, [user, cart, guestId, navigate, isCheckoutRedirect, dispatch]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    dispatch(loginUser({ email, password }));
+    dispatch(clearError());
+    dispatch(loginUser({ email: email.toLowerCase().trim(), password }));
   };
 
   return (
-    <div className="flex">
-      <div className="w-full md:w-1/2 flex-col justify-center items-center p-8 md:p-12 flex">
+    <div className="flex min-h-screen">
+      <div className="w-full md:w-1/2 flex items-center justify-center p-8 bg-gray-50">
         <form
           onSubmit={handleSubmit}
-          className="w-full max-w-md bg-white p-8 rounded-lg border shadow-sm"
+          className="w-full max-w-md bg-white p-10 rounded-xl shadow-lg border"
         >
-          <div className="flex justify-center mb-6">
-            <h2 className="text-xl font-medium">RabbitStore</h2>
+          <div className="text-center mb-8">
+            <h2 className="text-2xl font-bold text-gray-800">RabbitStore</h2>
+            <p className="text-3xl font-bold mt-4">Chào mừng quay lại!</p>
+            <p className="text-gray-600 mt-2">Đăng nhập để tiếp tục mua sắm</p>
           </div>
-          <h2 className="text-2xl font-bold text-center mb-6">Xin chào! 👋</h2>
-          <p className="text-center mb-4">
-            Hãy điền email và mật khẩu để đăng nhập.
-          </p>
-          {error && (
-            <p className="text-red-500 text-center mb-4">
-              Thông tin đăng nhập không đúng!
-            </p>
+
+          {(error || cartError) && (
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-6 text-center">
+              {error || cartError}
+            </div>
           )}
-          {cartError && (
-            <p className="text-red-500 text-center mb-4">{cartError}</p>
-          )}
-          <div className="mb-4">
-            <label className="block text-sm font-semibold mb-2">Email</label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => {
-                setEmail(e.target.value);
-                dispatch(clearError());
-              }}
-              className="w-full p-2 border rounded"
-              placeholder="Nhập địa chỉ email"
-              required
-            />
+
+          <div className="space-y-6">
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Email
+              </label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  dispatch(clearError());
+                }}
+                className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-black focus:outline-none transition"
+                placeholder="you@example.com"
+                required
+              />
+              <p className="text-xs text-gray-500 mt-1">Email bạn đã dùng để đăng ký</p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Mật khẩu
+              </label>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  dispatch(clearError());
+                }}
+                className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-black focus:outline-none transition"
+                placeholder="••••••••"
+                required
+              />
+            </div>
           </div>
-          <div className="mb-4">
-            <label className="block text-sm font-semibold mb-2">Mật khẩu</label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => {
-                setPassword(e.target.value);
-                dispatch(clearError());
-              }}
-              className="w-full p-2 border rounded"
-              placeholder="Nhập mật khẩu của bạn"
-              required
-            />
+
+          <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mt-6">
+            <p className="text-sm font-semibold text-amber-800 mb-2">Gợi ý:</p>
+            <ul className="text-xs text-amber-700 space-y-1 list-disc pl-5">
+              <li>Quên mật khẩu? Liên hệ admin để được hỗ trợ</li>
+              <li>Đảm bảo nhập đúng email đã đăng ký</li>
+            </ul>
           </div>
+
           <button
             type="submit"
-            className="w-full bg-black text-white p-2 rounded-lg font-semibold hover:bg-gray-800 transition"
+            className="w-full bg-black text-white py-4 rounded-lg font-bold text-lg hover:bg-gray-900 transition mt-8"
           >
             Đăng nhập
           </button>
-          <p className="mt-6 text-center text-sm">
+
+          <p className="text-center mt-6 text-sm text-gray-600">
             Chưa có tài khoản?{" "}
             <Link
               to={`/register?redirect=${encodeURIComponent(redirect)}`}
-              className="text-blue-500"
+              className="text-blue-600 font-semibold hover:underline"
             >
-              Đăng ký
+              Đăng ký ngay
             </Link>
           </p>
         </form>
       </div>
-      <div className="hidden md:block w-1/2 bg-gray-800">
-        <div className="h-full flex flex-col justify-center items-center">
-          <img
-            src={login}
-            alt="Đăng nhập vào tài khoản"
-            className="h-[750px] w-full object-cover"
-          />
-        </div>
+
+      <div className="hidden md:block w-1/2 bg-gradient-to-br from-gray-800 to-black">
+        <img
+          src={login}
+          alt="Đăng nhập"
+          className="h-full w-full object-cover opacity-90"
+        />
       </div>
     </div>
   );
