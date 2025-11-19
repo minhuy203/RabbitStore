@@ -47,9 +47,9 @@ const Login = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4 py-8">
-      <div className="flex w-full max-w-5xl shadow-2xl rounded-3xl overflow-hidden bg-white">
-        {/* Form bên trái - mỏng, đẹp */}
-        <div className="w-full lg:w-96 xl:w-[420px] p-8 lg:p-10 flex flex-col justify-center">
+      <div className="flex w-full max-w-5xl h-[680px] shadow-2xl rounded-3xl overflow-hidden bg-white">
+        {/* Form bên trái */}
+        <div className="w-full lg:w-96 xl:w-[420px] p-8 lg:p-10 flex flex-col justify-center bg-white">
           <form onSubmit={handleSubmit} className="space-y-5">
             <div className="text-center">
               <h2 className="text-2xl font-bold text-gray-800">RabbitStore</h2>
@@ -101,14 +101,14 @@ const Login = () => {
           </form>
         </div>
 
-        {/* Ảnh bên phải - ĐÃ FIX 100%, HIỆN TO ĐẸP */}
-        <div className="hidden lg:block w-[500px] xl:w-[580px] relative overflow-hidden">
+        {/* Ảnh bên phải – cao bằng form, khít 100%, không viền trắng */}
+        <div className="hidden lg:block flex-1 relative">
           <img
             src={login}
             alt="Login"
-            className="w-full h-full object-cover"
+            className="absolute inset-0 w-full h-full object-cover"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
         </div>
       </div>
     </div>
