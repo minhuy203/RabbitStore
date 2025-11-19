@@ -105,12 +105,11 @@ const CreateProductPage = () => {
     }
   };
 
-  const handleSubmit = async (e) => {
+const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      // Kiểm tra các trường bắt buộc
       if (!productData.name || !productData.description || !productData.price || !productData.countInStock || !productData.sku) {
-        setMessage("❌ Vui lòng điền đầy đủ các trường bắt buộc!");
+        setMessage("Vui lòng điền đầy đủ các trường bắt buộc!");
         setTimeout(() => setMessage(""), 3000);
         return;
       }
@@ -124,12 +123,14 @@ const CreateProductPage = () => {
       }
 
       await dispatch(createProduct(productData)).unwrap();
-      setMessage("✅ Thêm mới sản phẩm thành công!");
-      setTimeout(() => setMessage(""), 3000);
-      navigate("/admin/products");
+
+      // Gửi thông báo về trang quản lý
+      navigate("/admin/products", {
+        state: { message: "Thêm mới sản phẩm thành công!", type: "success" }
+      });
     } catch (err) {
       console.error("Create error:", err);
-      setMessage(`❌ Thêm mới thất bại! Lỗi: ${err || "Không xác định"}`);
+      setMessage(`Thêm mới thất bại! Lỗi: ${err.message || err}`);
       setTimeout(() => setMessage(""), 3000);
     }
   };

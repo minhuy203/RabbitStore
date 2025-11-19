@@ -138,12 +138,14 @@ const EditProductPage = () => {
     e.preventDefault();
     try {
       await dispatch(updateProduct({ id, productData })).unwrap();
-      setMessage("✅ Cập nhật sản phẩm thành công!");
-      setTimeout(() => setMessage(""), 3000);
-      navigate("/admin/products");
+
+      // Gửi thông báo về trang quản lý
+      navigate("/admin/products", {
+        state: { message: "Cập nhật sản phẩm thành công!", type: "success" }
+      });
     } catch (err) {
       console.error("Update error:", err);
-      setMessage("❌ Cập nhật thất bại!");
+      setMessage("Cập nhật thất bại!");
       setTimeout(() => setMessage(""), 3000);
     }
   };

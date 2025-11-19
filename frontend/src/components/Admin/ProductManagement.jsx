@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom"; // Thêm useLocation
 import {
   deleteProduct,
   fetchAdminProducts,
@@ -38,6 +38,7 @@ const Notification = ({ message, type = "success", onClose }) => {
 const ProductManagement = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const location = useLocation(); // Thêm để nhận state
 
   const { products, loading, error } = useSelector((state) => state.adminProducts);
 
@@ -53,6 +54,15 @@ const ProductManagement = () => {
   };
 
   const closeNotification = () => setNotification(null);
+
+  // === NHẬN THÔNG BÁO TỪ EDIT / CREATE PAGE ===
+  useEffect(() => {
+    if (location.state?.message) {
+      showNotification(location.state.message, location.state.type || "success");
+      // Xóa state để tránh hiện lại khi reload trang
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state]);
 
   // Gọi API khi mount
   useEffect(() => {
@@ -71,7 +81,7 @@ const ProductManagement = () => {
 
       if (deleteProduct.fulfilled.match(result)) {
         showNotification(`Đã xóa sản phẩm "${product.name}" thành công!`);
-        dispatch(fetchAdminProducts()); // Refresh danh sách
+        dispatch(fetchAdminProducts());
       } else {
         showNotification(
           result.payload?.message || "Xóa sản phẩm thất bại!",
@@ -97,7 +107,7 @@ const ProductManagement = () => {
 
   return (
     <div className="max-w-7xl mx-auto p-6 bg-gray-50 min-h-screen">
-      {/* Thông báo đẹp như UserManagement */}
+      {/* Thông báo đẹp */}
       {notification && (
         <Notification
           message={notification.message}
@@ -126,7 +136,7 @@ const ProductManagement = () => {
             to="/admin/products/create"
             className="bg-gradient-to-r from-green-500 to-emerald-600 text-white px-6 py-3 rounded-lg font-bold hover:from-green-600 hover:to-emerald-700 transition shadow-md text-center"
           >
-            + Thêm sản phẩm mới
+            + Thứm sản phẩm mới
           </Link>
         </div>
       </div>
@@ -239,7 +249,7 @@ const ProductManagement = () => {
         )}
       </div>
 
-      {/* Animation CSS (nếu chưa có trong dự án) */}
+      {/* Animation CSS inject tự động */}
       <style jsx>{`
         @keyframes slideInRight {
           from {

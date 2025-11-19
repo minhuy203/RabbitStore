@@ -7,7 +7,7 @@ import {
   cancelOrderByAdmin,
 } from "../../redux/slices/adminOrderSlice";
 
-// === COMPONENT THÔNG BÁO ĐẸP NHƯ USERMANAGEMENT ===
+// ==================== COMPONENT THÔNG BÁO ĐẸP NHƯ USERMANAGEMENT ====================
 const Notification = ({ message, type = "success", onClose }) => {
   useEffect(() => {
     const timer = setTimeout(onClose, 4000);
@@ -33,6 +33,7 @@ const Notification = ({ message, type = "success", onClose }) => {
   );
 };
 
+// ================================== ORDER DETAIL PAGE ==================================
 const OrderDetailPage = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -75,7 +76,12 @@ const OrderDetailPage = () => {
     const result = await dispatch(updateOrderStatus({ id, status }));
 
     if (updateOrderStatus.fulfilled.match(result)) {
-      showNotification(`Đã cập nhật trạng thái → ${getStatusText(status)}`);
+      const statusText = {
+        Processing: "Đang xử lý",
+        Shipped: "Đang vận chuyển",
+        Delivered: "Đã giao hàng",
+      }[status];
+      showNotification(`Đã cập nhật trạng thái → ${statusText}`);
       dispatch(fetchOrderById(id));
     } else {
       showNotification("Cập nhật trạng thái thất bại!", "error");
@@ -102,16 +108,6 @@ const OrderDetailPage = () => {
     }
   };
 
-  const getStatusText = (status) => {
-    const map = {
-      Processing: "Đang xử lý",
-      Shipped: "Đang vận chuyển",
-      Delivered: "Đã giao hàng",
-      Cancelled: "Đã hủy",
-    };
-    return map[status] || status;
-  };
-
   const renderStatusBadge = (status) => {
     const map = {
       Processing: { text: "Đang xử lý", color: "bg-yellow-100 text-yellow-800" },
@@ -127,16 +123,16 @@ const OrderDetailPage = () => {
     );
   };
 
-  if (loading) return <p className="text-center text-gray-500 py-8">Đang tải...</p>;
-  if (error) return <p className="text-red-500 text-center py-8">Lỗi: {error}</p>;
-  if (!order) return <p className="text-center text-gray-500 py-8">Không tìm thấy đơn hàng</p>;
+  if (loading) return <p className="text-center text-gray-500 py-16 text-lg">Đang tải chi tiết đơn hàng...</p>;
+  if (error) return <p className="text-red-500 text-center py-16 text-lg">Lỗi: {error}</p>;
+  if (!order) return <p className="text-center text-gray-500 py-16 text-lg">Không tìm thấy đơn hàng</p>;
 
   const isCancellable = ["Processing", "Shipped"].includes(order.status);
   const isFinalStatus = order.status === "Delivered" || order.status === "Cancelled";
 
   return (
     <div className="max-w-7xl mx-auto p-4 sm:p-6 bg-gray-50 min-h-screen">
-      {/* THÔNG BÁO ĐẸP NHƯ USERMANAGEMENT */}
+      {/* THÔNG BÁO ĐẸP */}
       {notification && (
         <Notification
           message={notification.message}
@@ -145,17 +141,58 @@ const OrderDetailPage = () => {
         />
       )}
 
-      <h2 className="text-2xl md:text-3xl font-bold mb-6 text-center">
+      <h2 className="text-2xl md:text-3xl font-bold mb-6 text-center text-gray-800">
         Chi tiết đơn hàng #{order._id.slice(-8)}
       </h2>
 
-      <div className="bg-white shadow-xl rounded-xl p-6 border relative">
-        {/* ... (giữ nguyên toàn bộ nội dung cũ của bạn, chỉ thêm thông báo ở trên) ... */}
+      <div className="bg-white shadow-xl rounded-xl p-6 border">
 
-        {/* Phần còn lại giữ nguyên 100% như cũ */}
-        {/* (Mình không paste lại để ngắn gọn, bạn chỉ cần giữ nguyên phần JSX cũ) */}
+        {/* Thông tin đơn hàng */}
+        <div className="mb-8">
+          <h3 className="text-lg font-semibold mb-3 text-gray-800">Thông tin đơn hàng</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+            <p><strong>Mã đơn:</strong> #{order._id}</p>
+            <p><strong>Ngày tạo:</strong> {new Date(order.createdAt).toLocaleString("vi-VN")}</p>
+          </div>
+        </div>
 
-        {/* Ví dụ: phần trạng thái */}
+        {/* Thông tin khách hàng */}
+        <div className="mb-8">
+          <h3 className="text-lg font-semibold mb-3 text-gray-800">Khách hàng</h3>
+          <div className="text-sm space-y-1">
+            <p><strong>Tên:</strong> {order.user?.name || "Khách không xác định"}</p>
+            <p><strong>Email:</strong> {order.user?.email || "Không có"}</p>
+          </div>
+        </div>
+
+        {/* Địa chỉ giao hàng */}
+        <div className="mb-8">
+          <h3 className="text-lg font-semibold mb-3 text-gray-800">Địa chỉ giao hàng</h3>
+          <div className="text-sm space-y-1">
+            <p><strong>Địa chỉ:</strong> {order.shippingAddress?.address || "Không có"}</p>
+            <p><strong>Thành phố:</strong> {order.shippingAddress?.city || "Không có"}</p>
+            <p><strong>Số điện thoại:</strong> {order.shippingAddress?.phone || "Không có"}</p>
+          </div>
+        </div>
+
+        {/* Thanh toán */}
+        <div className="mb-8">
+          <h3 className="text-lg font-semibold mb-3 text-gray-800">Thanh toán</h3>
+          <div className="text-sm space-y-1">
+            <p><strong>Phương thức:</strong> {order.paymentMethod || "Không xác định"}</p>
+            <p>
+              <strong>Trạng thái:</strong>{" "}
+              <span className={order.paymentStatus === "paid" ? "text-green-600 font-medium" : "text-red-600 font-medium"}>
+                {order.paymentStatus === "paid" ? "Đã thanh toán" : "Chưa thanh toán"}
+              </span>
+            </p>
+            {order.paidAt && (
+              <p><strong>Thời gian thanh toán:</strong> {new Date(order.paidAt).toLocaleString("vi-VN")}</p>
+            )}
+          </div>
+        </div>
+
+        {/* Trạng thái đơn hàng */}
         <div className="mb-8">
           <h3 className="text-lg font-semibold mb-3 text-gray-800">Trạng thái đơn hàng</h3>
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
@@ -169,12 +206,12 @@ const OrderDetailPage = () => {
             </div>
 
             {!isFinalStatus && (
-              <div className="flex gap-2 flex-wrap">
+              <div className="flex flex-wrap gap-2">
                 <select
                   value={order.status}
                   onChange={(e) => handleStatusChange(e.target.value)}
                   disabled={loading}
-                  className="bg-white border border-gray-300 text-sm rounded-lg p-2.5 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50"
+                  className="bg-white border border-gray-300 text-sm rounded-lg px-4 py-2.5 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50"
                 >
                   <option value="Processing">Đang xử lý</option>
                   <option value="Shipped">Đang vận chuyển</option>
@@ -183,9 +220,9 @@ const OrderDetailPage = () => {
                 <button
                   onClick={() => handleStatusChange("Delivered")}
                   disabled={loading}
-                  className="bg-green-600 text-white px-4 py-2 rounded text-sm hover:bg-green-700 disabled:opacity-50 transition"
+                  className="bg-green-600 text-white px-5 py-2.5 rounded-lg hover:bg-green-700 disabled:opacity-50 transition font-medium"
                 >
-                  {loading ? "Đang xử lý..." : "Đánh dấu giao hàng"}
+                  {loading ? "Đang xử lý..." : "Đánh dấu đã giao"}
                 </button>
               </div>
             )}
@@ -205,21 +242,76 @@ const OrderDetailPage = () => {
           )}
         </div>
 
-        {/* ... phần còn lại giữ nguyên ... */}
+        {/* Danh sách sản phẩm */}
+        <div className="mb-8">
+          <h3 className="text-lg font-semibold mb-3 text-gray-800">Sản phẩm trong đơn</h3>
+          <div className="overflow-x-auto">
+            <table className="min-w-full text-sm text-left text-gray-600">
+              <thead className="bg-gray-50 text-xs uppercase text-gray-700">
+                <tr>
+                  <th className="py-3 px-4">Sản phẩm</th>
+                  <th className="py-3 px-4">Hình ảnh</th>
+                  <th className="py-3 px-4">Size</th>
+                  <th className="py-3 px-4">Màu</th>
+                  <th className="py-3 px-4 text-center">SL</th>
+                  <th className="py-3 px-4 text-right">Giá</th>
+                  <th className="py-3 px-4 text-right">Giảm giá</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {order.orderItems?.length > 0 ? (
+                  order.orderItems.map((item) => (
+                    <tr key={item.productId} className="hover:bg-gray-50">
+                      <td className="py-3 px-4 font-medium max-w-xs truncate">{item.name}</td>
+                      <td className="py-3 px-4">
+                        {item.image ? (
+                          <img src={item.image} alt={item.name} className="w-14 h-14 object-cover rounded-md shadow" />
+                        ) : (
+                          <div className="w-14 h-14 bg-gray-200 border-2 border-dashed rounded-md"></div>
+                        )}
+                      </td>
+                      <td className="py-3 px-4">{item.size || "—"}</td>
+                      <td className="py-3 px-4">{item.color || "—"}</td>
+                      <td className="py-3 px-4 text-center font-medium">{item.quantity}</td>
+                      <td className="py-3 px-4 text-right">{item.price.toLocaleString("vi-VN")}₫</td>
+                      <td className="py-3 px-4 text-right text-green-600 font-medium">
+                        {item.discountPrice > 0 ? item.discountPrice.toLocaleString("vi-VN") + "₫" : "—"}
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={7} className="py-12 text-center text-gray-500">Không có sản phẩm</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* Tổng tiền */}
+        <div className="mb-8 p-6 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl">
+          <div className="flex justify-between items-center">
+            <h3 className="text-xl font-bold text-gray-800">Tổng cộng</h3>
+            <p className="text-2xl font-bold text-green-600">
+              {order.totalPrice.toLocaleString("vi-VN")}₫
+            </p>
+          </div>
+        </div>
 
         {/* NÚT HỦY + QUAY LẠI */}
         <div className="flex justify-between items-center pt-6 border-t border-gray-200">
           <button
             onClick={() => navigate("/admin/orders")}
-            className="text-gray-600 hover:text-gray-800 font-medium flex items-center gap-1"
+            className="text-gray-600 hover:text-gray-900 font-medium flex items-center gap-1 transition"
           >
-            ← Quay lại danh sách
+            ← Quay lại danh sách đơn hàng
           </button>
 
           {isCancellable && (
             <button
               onClick={() => setShowCancelModal(true)}
-              className="bg-red-600 text-white px-6 py-2.5 rounded-lg hover:bg-red-700 transition font-medium shadow-md"
+              className="bg-red-600 text-white px-7 py-3 rounded-lg hover:bg-red-700 transition font-medium shadow-lg"
             >
               Hủy đơn hàng
             </button>
@@ -230,48 +322,48 @@ const OrderDetailPage = () => {
       {/* MODAL HỦY ĐƠN */}
       {showCancelModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white p-6 rounded-lg max-w-md w-full shadow-2xl">
-            <h3 className="text-xl font-bold mb-4 text-gray-800">Hủy đơn hàng (Admin)</h3>
-            <p className="text-gray-600 mb-4">Chọn lý do hủy đơn:</p>
+          <div className="bg-white p-6 rounded-xl max-w-md w-full shadow-2xl">
+            <h3 className="text-2xl font-bold mb-4 text-gray-800">Hủy đơn hàng (Admin)</h3>
+            <p className="text-gray-600 mb-5">Vui lòng chọn lý do hủy:</p>
 
-            <div className="space-y-2 mb-4">
+            <div className="space-y-3 mb-5">
               {adminCancelReasons.map((r) => (
                 <label
                   key={r}
-                  className="flex items-center space-x-2 cursor-pointer hover:bg-gray-50 p-2 rounded"
+                  className="flex items-center space-x-3 cursor-pointer hover:bg-gray-50 p-3 rounded-lg transition"
                 >
                   <input
                     type="radio"
-                    name="adminReason"
+                    name="reason"
                     value={r}
                     checked={cancelReason === r}
                     onChange={(e) => setCancelReason(e.target.value)}
-                    className="text-red-600 focus:ring-red-500"
+                    className="w-5 h-5 text-red-600 focus:ring-red-500"
                   />
-                  <span className="text-gray-700">{r}</span>
+                  <span className="text-gray-700 font-medium">{r}</span>
                 </label>
               ))}
             </div>
 
-            {cancelError && <p className="text-red-500 text-sm mb-4 font-medium">{cancelError}</p>}
+            {cancelError && <p className="text-red-600 text-sm font-medium mb-4">{cancelError}</p>}
 
-            <div className="flex justify-end space-x-3 mt-6">
+            <div className="flex justify-end gap-3 mt-6">
               <button
                 onClick={() => {
                   setShowCancelModal(false);
                   setCancelError("");
                   setCancelReason("");
                 }}
-                className="px-5 py-2 border border-gray-300 rounded-lg hover:bg-gray-100 transition"
+                className="px-6 py-2.5 border border-gray-300 rounded-lg hover:bg-gray-100 transition font-medium"
               >
                 Hủy bỏ
               </button>
               <button
                 onClick={handleAdminCancel}
                 disabled={loading}
-                className="px-5 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 transition font-medium"
+                className="px-6 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 transition font-medium"
               >
-                {loading ? "Đang xử lý..." : "Xác nhận hủy"}
+                {loading ? "Đang xử lý..." : "Xác nhận hủy đơn"}
               </button>
             </div>
           </div>
@@ -281,7 +373,7 @@ const OrderDetailPage = () => {
   );
 };
 
-// === INJECT CSS TỰ ĐỘNG – GIỐNG HỆT USERMANAGEMENT ===
+// === TỰ ĐỘNG THÊM ANIMATION – GIỐNG HỆT USERMANAGEMENT ===
 const style = document.createElement("style");
 style.textContent = `
   @keyframes slideInRight {
