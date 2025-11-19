@@ -34,15 +34,16 @@ const Register = () => {
   }, [user, guestId, cart, navigate, isCheckoutRedirect, dispatch]);
 
   const validateName = (val) => {
-    if (!val.trim()) return "Vui lòng nhập họ tên";
-    if (val.trim().length < 2) return "Tên quá ngắn";
-    if (!/^[\p{L}\s]+$/u.test(val)) return "Chỉ được chữ cái và khoảng trắng";
+    const nameRegex = /^[\p{L}\s]+$/u;
+    if (!val.trim()) return "Họ và tên không được để trống!";
+    if (val.trim().length < 2) return "Họ và tên phải có ít nhất 2 ký tự!";
+    if (!nameRegex.test(val)) return "Tên chỉ được chứa chữ cái và khoảng trắng!";
     return "";
   };
 
   const validatePassword = (val) => {
-    if (val.length < 6) return "Mật khẩu ít nhất 6 ký tự";
-    if (!/^[a-zA-Z0-9]+$/.test(val)) return "Chỉ chữ cái và số";
+    if (val.length < 6) return "Mật khẩu phải có ít nhất 6 ký tự!";
+    if (!/^[a-zA-Z0-9]+$/.test(val)) return "Mật khẩu chỉ được chứa chữ cái và số!";
     return "";
   };
 
@@ -63,9 +64,8 @@ const Register = () => {
     e.preventDefault();
     const nameErr = validateName(name);
     const passErr = validatePassword(password);
-    const emailValid = email.includes("@") && email.includes(".");
 
-    if (nameErr || passErr || !emailValid) {
+    if (nameErr || passErr || !email.includes("@")) {
       setNameError(nameErr);
       setPasswordError(passErr);
       return;
@@ -80,15 +80,14 @@ const Register = () => {
 
   return (
     <div className="flex min-h-screen">
-      {/* Form */}
-      <div className="w-full md:w-1/2 flex items-center justify-center p-5 bg-gray-50">
+      <div className="w-full md:w-1/2 flex items-center justify-center p-4 bg-gray-50">
         <form
           onSubmit={handleSubmit}
-          className="w-full max-w-sm bg-white rounded-2xl shadow-xl border p-8 space-y-5"
+          className="w-full max-w-sm bg-white rounded-2xl shadow-2xl border p-7 space-y-4"
         >
           <div className="text-center">
             <h2 className="text-2xl font-bold text-gray-800">RabbitStore</h2>
-            <p className="text-2xl font-bold mt-3">Tạo tài khoản mới</p>
+            <p className="text-2xl font-bold mt-2">Tạo tài khoản mới</p>
           </div>
 
           {error && (
@@ -97,34 +96,48 @@ const Register = () => {
             </div>
           )}
 
-          <input
-            type="text"
-            name="name"
-            value={name}
-            onChange={handleChange}
-            placeholder="Họ và tên"
-            className="w-full px-4 py-3.5 border rounded-lg focus:ring-2 focus:ring-black focus:outline-none text-sm"
-          />
-          {nameError && <p className="text-red-500 text-xs -mt-2">{nameError}</p>}
+          <div>
+            <input
+              type="text"
+              name="name"
+              value={name}
+              onChange={handleChange}
+              placeholder="Họ và tên"
+              className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-black focus:outline-none text-sm"
+            />
+            {nameError && <p className="text-red-500 text-xs mt-1">{nameError}</p>}
+          </div>
 
           <input
             type="email"
             name="email"
             value={email}
             onChange={handleChange}
-            placeholder="Email"
-            className="w-full px-4 py-3.5 border rounded-lg focus:ring-2 focus:ring-black focus:outline-none text-sm"
+            placeholder="you@example.com"
+            className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-black focus:outline-none text-sm"
           />
 
-          <input
-            type="password"
-            name="password"
-            value={password}
-            onChange={handleChange}
-            placeholder="Mật khẩu (tối thiểu 6 ký tự)"
-            className="w-full px-4 py-3.5 border rounded-lg focus:ring-2 focus:ring-black focus:outline-none text-sm"
-          />
-          {passwordError && <p className="text-red-500 text-xs -mt-2 Tylko">{passwordError}</p>}
+          <div>
+            <input
+              type="password"
+              name="password"
+              value={password}
+              onChange={handleChange}
+              placeholder="Mật khẩu"
+              className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-black focus:outline-none text-sm"
+            />
+            {passwordError && <p className="text-red-500 text-xs mt-1">{passwordError}</p>}
+          </div>
+
+          {/* Giữ nguyên hộp gợi ý màu xanh */}
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-xs">
+            <p className="font-semibold text-blue-800 mb-1">Yêu cầu bắt buộc:</p>
+            <ul className="text-blue-700 space-y-0.5 list-disc pl-4">
+              <li>Họ tên không chứa số hoặc ký tự đặc biệt</li>
+              <li>Mật khẩu từ 6 ký tự trở lên</li>
+              <li>Email phải hợp lệ và chưa từng đăng ký</li>
+            </ul>
+          </div>
 
           <button
             type="submit"
@@ -133,26 +146,21 @@ const Register = () => {
             Đăng ký ngay
           </button>
 
-          <p className="text-center text-sm text-gray-600">
+          <p className="text-center text-sm text-gray-600 -mt-2">
             Đã có tài khoản?{" "}
             <Link
               to={`/login?redirect=${encodeURIComponent(redirect)}`}
               className="text-blue-600 font-semibold hover:underline"
             >
-              Đăng nhập
+              Đăng nhập tại đây
             </Link>
           </p>
         </form>
       </div>
 
-      {/* Hình nền */}
       <div className="hidden md:block w-1/2 relative overflow-hidden">
-        <img
-          src={register}
-          alt="Register"
-          className="absolute inset-0 w-full h-full object-cover"
-        />
-        <div className="absolute inset-0 bg-black/40" />
+        <img src={register} alt="Register" className="w-full h-full object-cover" />
+        <div className="absolute inset-0 bg-black/30" />
       </div>
     </div>
   );

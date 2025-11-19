@@ -8,6 +8,7 @@ import { useDispatch, useSelector } from "react-redux";
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const location = useLocation();
@@ -46,15 +47,14 @@ const Login = () => {
 
   return (
     <div className="flex min-h-screen">
-      {/* Form - Gọn đẹp */}
-      <div className="w-full md:w-1/2 flex items-center justify-center p-5 bg-gray-50">
+      <div className="w-full md:w-1/2 flex items-center justify-center p-4 bg-gray-50">
         <form
           onSubmit={handleSubmit}
-          className="w-full max-w-sm bg-white rounded-2xl shadow-xl border p-8 space-y-6"
+          className="w-full max-w-sm bg-white rounded-2xl shadow-2xl border p-7 space-y-5"
         >
           <div className="text-center">
             <h2 className="text-2xl font-bold text-gray-800">RabbitStore</h2>
-            <p className="text-2xl font-bold mt-3">Chào mừng quay lại!</p>
+            <p className="text-2xl font-bold mt-2">Chào mừng quay lại!</p>
           </div>
 
           {(error || cartError) && (
@@ -67,8 +67,8 @@ const Login = () => {
             type="email"
             value={email}
             onChange={(e) => { setEmail(e.target.value); dispatch(clearError()); }}
-            className="w-full px-4 py-3.5 border rounded-lg focus:ring-2 focus:ring-black focus:outline-none text-sm"
-            placeholder="Email của bạn"
+            className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-black focus:outline-none"
+            placeholder="you@example.com"
             required
           />
 
@@ -76,10 +76,19 @@ const Login = () => {
             type="password"
             value={password}
             onChange={(e) => { setPassword(e.target.value); dispatch(clearError()); }}
-            className="w-full px-4 py-3.5 border rounded-lg focus:ring-2 focus:ring-black focus:outline-none text-sm"
-            placeholder="Mật khẩu"
+            className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-black focus:outline-none"
+            placeholder="••••••••"
             required
           />
+
+          {/* Giữ nguyên hộp gợi ý màu vàng */}
+          <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-xs">
+            <p className="font-semibold text-amber-800 mb-1">Gợi ý:</p>
+            <ul className="text-amber-700 space-y-0.5 list-disc pl-4">
+              <li>Quên mật khẩu? Liên hệ admin để được hỗ trợ</li>
+              <li>Đảm bảo nhập đúng email đã đăng ký</li>
+            </ul>
+          </div>
 
           <button
             type="submit"
@@ -88,7 +97,7 @@ const Login = () => {
             Đăng nhập
           </button>
 
-          <p className="text-center text-sm text-gray-600">
+          <p className="text-center text-sm text-gray-600 -mt-1">
             Chưa có tài khoản?{" "}
             <Link
               to={`/register?redirect=${encodeURIComponent(redirect)}`}
@@ -100,14 +109,9 @@ const Login = () => {
         </form>
       </div>
 
-      {/* Hình nền */}
-      <div className="hidden md:block w-1/2 relative overflow5-hidden">
-        <img
-          src={login}
-          alt="Login"
-          className="absolute inset-0 w-full h-full object-cover"
-        />
-        <div className="absolute inset-0 bg-black/40" />
+      <div className="hidden md:block w-1/2 relative overflow-hidden">
+        <img src={login} alt="Login" className="w-full h-full object-cover" />
+        <div className="absolute inset-0 bg-black/30" />
       </div>
     </div>
   );
