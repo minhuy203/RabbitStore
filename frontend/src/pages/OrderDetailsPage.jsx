@@ -32,13 +32,15 @@ const OrderDetailsPage = () => {
       return;
     }
 
-    dispatch(cancelOrder({ orderId: id, reason: cancelReason })).then((action) => {
-      if (action.meta.requestStatus === "fulfilled") {
-        setShowCancelModal(false);
-        setCancelReason("");
-        setCancelError("");
+    dispatch(cancelOrder({ orderId: id, reason: cancelReason })).then(
+      (action) => {
+        if (action.meta.requestStatus === "fulfilled") {
+          setShowCancelModal(false);
+          setCancelReason("");
+          setCancelError("");
+        }
       }
-    });
+    );
   };
 
   const formatShippingAddress = (addr) => {
@@ -104,10 +106,18 @@ const OrderDetailsPage = () => {
                 {orderDetails.isPaid ? "Đã thanh toán" : "Chưa thanh toán"}
               </p>
             </div>
+
+            {/* ------------------------- 
+                 THÊM PHẦN HIỂN THỊ SỐ ĐIỆN THOẠI
+               ------------------------- */}
             <div>
               <h4 className="font-semibold mb-2">Giao hàng</h4>
               <p>
                 Địa chỉ: {formatShippingAddress(orderDetails.shippingAddress)}
+              </p>
+              <p>
+                Số điện thoại:{" "}
+                {orderDetails.shippingAddress?.phone || "Không có"}
               </p>
             </div>
           </div>
@@ -165,15 +175,16 @@ const OrderDetailsPage = () => {
             </div>
           </div>
 
-          {/* Lý do hủy (nếu có) */}
-          {orderDetails.status === "Cancelled" && orderDetails.cancelReason && (
-            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-              <p className="font-medium text-red-700">Lý do hủy:</p>
-              <p className="text-red-600">{orderDetails.cancelReason}</p>
-            </div>
-          )}
+          {/* Lý do hủy */}
+          {orderDetails.status === "Cancelled" &&
+            orderDetails.cancelReason && (
+              <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+                <p className="font-medium text-red-700">Lý do hủy:</p>
+                <p className="text-red-600">{orderDetails.cancelReason}</p>
+              </div>
+            )}
 
-          {/* Nút Hủy + Quay lại - GÓC DƯỚI BÊN PHẢI */}
+          {/* Footer */}
           <div className="flex justify-between items-center mt-8 pt-6 border-t border-gray-200">
             <Link
               to="/my-orders"
@@ -182,7 +193,6 @@ const OrderDetailsPage = () => {
               ← Quay lại đơn hàng
             </Link>
 
-            {/* Nút Hủy - chỉ hiện khi Processing */}
             {orderDetails.status === "Processing" && (
               <button
                 onClick={() => setShowCancelModal(true)}
@@ -200,7 +210,9 @@ const OrderDetailsPage = () => {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white p-6 rounded-lg max-w-md w-full shadow-xl">
             <h3 className="text-xl font-bold mb-4 text-gray-800">Hủy đơn hàng</h3>
-            <p className="text-gray-600 mb-4">Vui lòng chọn lý do hủy đơn:</p>
+            <p className="text-gray-600 mb-4">
+              Vui lòng chọn lý do hủy đơn:
+            </p>
 
             <div className="space-y-2 mb-4">
               {reasons.map((r) => (
@@ -222,7 +234,9 @@ const OrderDetailsPage = () => {
             </div>
 
             {cancelError && (
-              <p className="text-red-500 text-sm mb-4 font-medium">{cancelError}</p>
+              <p className="text-red-500 text-sm mb-4 font-medium">
+                {cancelError}
+              </p>
             )}
 
             <div className="flex justify-end space-x-3 mt-6">
