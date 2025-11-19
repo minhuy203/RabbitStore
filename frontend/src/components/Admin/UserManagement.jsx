@@ -171,74 +171,72 @@ const UserManagement = () => {
         Quản lý người dùng
       </h2>
 
-      {/* FORM THÊM NGƯỜI DÙNG - SIÊU GỌN, MỖI TRƯỜNG CHỈ 1 DÒNG */}
-      <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
+      {/* FORM THÊM NGƯỜI DÙNG - 1 CỘT, SIÊU GỌN, CÓ GỢI Ý */}
+      <div className="bg-white rounded-xl shadow-lg p-6 mb-8 max-w-2xl mx-auto">
         <h3 className="text-xl font-bold text-gray-800 mb-6">Thêm người dùng mới</h3>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid md:grid-cols-2 gap-5">
-            <div>
-              <input
-                type="text"
-                name="name"
-                value={formData.name}
-                onChange={handleChange}
-                placeholder="Họ và tên *"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition text-gray-800 font-medium"
-              />
-              <p className="text-xs text-gray-500 mt-1 ml-1">Chỉ chữ cái và khoảng trắng, ≥ 2 ký tự</p>
-            </div>
-
-            <div>
-              <input
-                type="email"
-                name="email"
-                value={formData.email}
-                onChange={handleChange}
-                placeholder="Email *"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition text-gray-800 font-medium"
-              />
-              <p className="text-xs text-gray-500 mt-1 ml-1">Email phải hợp lệ và chưa tồn tại</p>
-            </div>
-
-            <div>
-              <input
-                type="password"
-                name="password"
-                value={formData.password}
-                onChange={handleChange}
-                placeholder="Mật khẩu *"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition text-gray-800 font-medium"
-              />
-              <p className="text-xs text-gray-500 mt-1 ml-1">≥ 6 ký tự, chỉ chữ cái và số</p>
-            </div>
-
-            <div>
-              <select
-                name="role"
-                value={formData.role}
-                onChange={handleChange}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition text-gray-800 font-medium"
-              >
-                <option value="customer">Khách hàng</option>
-                <option value="admin">Quản trị viên</option>
-              </select>
-              <p className="text-xs text-gray-500 mt-1 ml-1">Chọn vai trò cho tài khoản</p>
-            </div>
+        <form onSubmit={handleSubmit} className="space-y-5">
+          <div>
+            <input
+              type="text"
+              name="name"
+              value={formData.name}
+              onChange={handleChange}
+              placeholder="Họ và tên *"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition text-gray-800 font-medium"
+            />
+            <p className="text-xs text-gray-500 mt-1 ml-1">Chỉ chữ cái và khoảng trắng, ≥ 2 ký tự</p>
           </div>
 
-          <div className="flex gap-3 pt-2">
+          <div>
+            <input
+              type="email"
+              name="email"
+              value={formData.email}
+              onChange={handleChange}
+              placeholder="Email *"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition text-gray-800 font-medium"
+            />
+            <p className="text-xs text-gray-500 mt-1 ml-1">Email phải hợp lệ và chưa tồn tại</p>
+          </div>
+
+          <div>
+            <input
+              type="password"
+              name="password"
+              value={formData.password}
+              onChange={handleChange}
+              placeholder="Mật khẩu *"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition text-gray-800 font-medium"
+            />
+            <p className="text-xs text-gray-500 mt-1 ml-1">≥ 6 ký tự, chỉ chứa chữ cái và số</p>
+          </div>
+
+          <div>
+            <select
+              name="role"
+              value={formData.role}
+              onChange={handleChange}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition text-gray-800 font-medium bg-white"
+            >
+              <option value="customer">Khách hàng</option>
+              <option value="admin">Quản trị viên</option>
+            </select>
+            <p className="text-xs text-gray-500 mt-1 ml-1">Chọn vai trò cho tài khoản mới</p>
+          </div>
+
+          <div className="flex gap-3 pt-3">
             <button
               type="submit"
               disabled={loading}
-              className="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-3 rounded-lg font-bold hover:from-blue-700 hover:to-indigo-700 transition disabled:opacity-70"
+              className="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-3.5 rounded-lg font-bold text-lg hover:from-blue-700 hover:to-indigo-700 transition disabled:opacity-70 shadow-md"
             >
               {loading ? "Đang tạo..." : "Tạo tài khoản mới"}
             </button>
             <button
               type="button"
               onClick={() => setFormData({ name: "", email: "", password: "", role: "customer" })}
-              className="px-6 py-3 border border-gray-300 rounded-lg font-medium hover:bg-gray-50 transition"
+              className="px-6 py-3.5 border border-gray-300 rounded-lg font-medium hover:bg-gray-50 transition"
             >
               Xóa form
             </button>
