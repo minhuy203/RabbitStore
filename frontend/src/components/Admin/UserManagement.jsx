@@ -159,7 +159,6 @@ const UserManagement = () => {
 
   return (
     <div className="max-w-7xl mx-auto p-6 bg-gray-50 min-h-screen">
-      {/* Thông báo */}
       {notification && (
         <Notification
           message={notification.message}
@@ -172,73 +171,69 @@ const UserManagement = () => {
         Quản lý người dùng
       </h2>
 
-      {/* FORM THÊM NGƯỜI DÙNG - GỌN + ĐẸP */}
+      {/* FORM THÊM NGƯỜI DÙNG - SIÊU GỌN, MỖI TRƯỜNG CHỈ 1 DÒNG */}
       <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
-        <h3 className="text-xl font-bold text-gray-800 mb-5">Thêm người dùng mới</h3>
+        <h3 className="text-xl font-bold text-gray-800 mb-6">Thêm người dùng mới</h3>
 
-        <form onSubmit={handleSubmit} className="grid md:grid-cols-2 gap-5">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Họ và tên <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              name="name"
-              value={formData.name}
-              onChange={handleChange}
-              className="w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none transition"
-              placeholder="Nguyễn Văn A"
-            />
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="grid md:grid-cols-2 gap-5">
+            <div>
+              <input
+                type="text"
+                name="name"
+                value={formData.name}
+                onChange={handleChange}
+                placeholder="Họ và tên *"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition text-gray-800 font-medium"
+              />
+              <p className="text-xs text-gray-500 mt-1 ml-1">Chỉ chữ cái và khoảng trắng, ≥ 2 ký tự</p>
+            </div>
+
+            <div>
+              <input
+                type="email"
+                name="email"
+                value={formData.email}
+                onChange={handleChange}
+                placeholder="Email *"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition text-gray-800 font-medium"
+              />
+              <p className="text-xs text-gray-500 mt-1 ml-1">Email phải hợp lệ và chưa tồn tại</p>
+            </div>
+
+            <div>
+              <input
+                type="password"
+                name="password"
+                value={formData.password}
+                onChange={handleChange}
+                placeholder="Mật khẩu *"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition text-gray-800 font-medium"
+              />
+              <p className="text-xs text-gray-500 mt-1 ml-1">≥ 6 ký tự, chỉ chữ cái và số</p>
+            </div>
+
+            <div>
+              <select
+                name="role"
+                value={formData.role}
+                onChange={handleChange}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition text-gray-800 font-medium"
+              >
+                <option value="customer">Khách hàng</option>
+                <option value="admin">Quản trị viên</option>
+              </select>
+              <p className="text-xs text-gray-500 mt-1 ml-1">Chọn vai trò cho tài khoản</p>
+            </div>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Email <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="email"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              className="w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none transition"
-              placeholder="user@example.com"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Mật khẩu <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="password"
-              name="password"
-              value={formData.password}
-              onChange={handleChange}
-              className="w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none transition"
-              placeholder="≥ 6 ký tự"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Vai trò</label>
-            <select
-              name="role"
-              value={formData.role}
-              onChange={handleChange}
-              className="w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none transition"
-            >
-              <option value="customer">Khách hàng</option>
-              <option value="admin">Quản trị viên</option>
-            </select>
-          </div>
-
-          <div className="md:col-span-2 flex gap-3">
+          <div className="flex gap-3 pt-2">
             <button
               type="submit"
               disabled={loading}
-              className="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-3 rounded-lg font-semibold hover:from-blue-700 hover:to-indigo-700 transition disabled:opacity-70"
+              className="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-3 rounded-lg font-bold hover:from-blue-700 hover:to-indigo-700 transition disabled:opacity-70"
             >
-              {loading ? "Đang tạo..." : "Tạo tài khoản"}
+              {loading ? "Đang tạo..." : "Tạo tài khoản mới"}
             </button>
             <button
               type="button"
@@ -249,13 +244,9 @@ const UserManagement = () => {
             </button>
           </div>
         </form>
-
-        <div className="mt-4 text-xs text-gray-500">
-          Lưu ý: Tên chỉ chữ cái + khoảng trắng · Mật khẩu ≥ 6 ký tự, chỉ chữ/số · Email phải duy nhất
-        </div>
       </div>
 
-      {/* BẢNG DANH SÁCH */}
+      {/* BẢNG DANH SÁCH NGƯỜI DÙNG */}
       <div className="bg-white rounded-xl shadow-lg overflow-hidden">
         <div className="overflow-x-auto">
           <table className="min-w-full">
