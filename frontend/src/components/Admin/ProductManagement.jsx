@@ -136,7 +136,7 @@ const ProductManagement = () => {
             to="/admin/products/create"
             className="bg-gradient-to-r from-green-500 to-emerald-600 text-white px-6 py-3 rounded-lg font-bold hover:from-green-600 hover:to-emerald-700 transition shadow-md text-center"
           >
-            + Thứm sản phẩm mới
+            + Thêm sản phẩm mới
           </Link>
         </div>
       </div>
