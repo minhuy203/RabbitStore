@@ -9,7 +9,7 @@ import {
 } from "../../redux/slices/adminSlice";
 import Pagination from "../Common/Pagination";
 
-// Component thông báo tự làm (không cần thư viện)
+// Component thông báo
 const Notification = ({ message, type = "success", onClose }) => {
   useEffect(() => {
     const timer = setTimeout(onClose, 4000);
@@ -17,7 +17,7 @@ const Notification = ({ message, type = "success", onClose }) => {
   }, [onClose]);
 
   return (
-    <div className={`fixed top-4 right-4 z-50 animate-slide-in-right`}>
+    <div className="fixed top-4 right-4 z-50 animate-slide-in-right">
       <div
         className={`px-6 py-4 rounded-lg shadow-2xl flex items-center gap-3 text-white font-medium ${
           type === "success"
@@ -42,7 +42,7 @@ const UserManagement = () => {
   const navigate = useNavigate();
 
   const { user } = useSelector((state) => state.auth);
-  const { users, loading, error } = useSelector((state) => state.admin);
+  const { users, loading } = useSelector((state) => state.admin);
 
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
@@ -54,10 +54,14 @@ const UserManagement = () => {
     role: "customer",
   });
 
-  // State cho thông báo
   const [notification, setNotification] = useState(null);
 
-  const showNotification = (message, type = "success") => {
+  // Hàm hiển thị thông báo an toàn (luôn là string)
+  const showNotification = (msg, type = "success") => {
+    const message =
+      typeof msg === "object" && msg !== null
+        ? msg.message || JSON.stringify(msg)
+        : String(msg || "Đã xảy ra lỗi");
     setNotification({ message, type });
   };
 
@@ -78,23 +82,61 @@ const UserManagement = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!formData.name.trim() || !formData.email.trim() || !formData.password) {
-      showNotification("Vui lòng điền đầy đủ thông tin!", "error");
+    // === VALIDATION NHƯ TRANG REGISTER ===
+    const nameRegex = /^[\p{L}\s]+$/u;
+    const passwordRegex = /^[a-zA-Z0-9]+$/;
+
+    if (!formData.name.trim()) {
+      showNotification("Họ và tên không ?? để trống!", "error");
+      return;
+    }
+    if (formData.name.trim().length < 2) {
+      showNotification("Họ và tên phải có ít nhất 2 ký tự!", "error");
+      return;
+    }
+    if (!nameRegex.test(formData.name.trim())) {
+      showNotification("Tên chỉ được chứa chữ cái và khoảng trắng!", "error");
+      return;
+    }
+
+    if (!formData.email.trim()) {
+      showNotification("Email không được để trống!", "error");
+      return;
+    }
+    if (!/^\S+@\S+\.\S+$/.test(formData.email.trim())) {
+      showNotification("Email không hợp lệ!", "error");
+      return;
+    }
+
+    if (!formData.password) {
+      showNotification("Mật khẩu không được để trống!", "error");
       return;
     }
     if (formData.password.length < 6) {
       showNotification("Mật khẩu phải có ít nhất 6 ký tự!", "error");
       return;
     }
+    if (!passwordRegex.test(formData.password)) {
+      showNotification("Mật khẩu chỉ được chứa chữ cái và số!", "error");
+      return;
+    }
 
-    const result = await dispatch(addUser(formData));
+    const payload = {
+      name: formData.name.trim(),
+      email: formData.email.toLowerCase().trim(),
+      password: formData.password,
+      role: formData.role,
+    };
+
+    const result = await dispatch(addUser(payload));
 
     if (addUser.fulfilled.match(result)) {
-      showNotification(`Đã thêm người dùng "${formData.name}" thành công!`);
+      showNotification(`Đã thêm người dùng "${payload.name}" thành công!`);
       setFormData({ name: "", email: "", password: "", role: "customer" });
       dispatch(fetchUsers());
     } else {
-      showNotification(result.payload || "Thêm người dùng thất bại!", "error");
+      // Đây là chỗ fix lỗi #31
+      showNotification(result.payload, "error");
     }
   };
 
@@ -115,7 +157,7 @@ const UserManagement = () => {
       const roleText = newRole === "admin" ? "Quản trị viên" : "Khách hàng";
       showNotification(`${targetUser.name} → Đã chuyển thành ${roleText}`);
     } else {
-      showNotification("Cập nhật vai trò thất bại!", "error");
+      showNotification(result.payload || "Cập nhật vai trò thất bại!", "error");
     }
   };
 
@@ -129,7 +171,7 @@ const UserManagement = () => {
           showNotification(`Đã xóa người dùng "${targetUser.name}" thành công!`);
           dispatch(fetchUsers());
         } else {
-          showNotification("Xóa người dùng thất bại!", "error");
+          showNotification(action.payload || "Xóa người dùng thất bại!", "error");
         }
       });
     }
@@ -144,7 +186,7 @@ const UserManagement = () => {
 
   return (
     <div className="max-w-7xl mx-auto p-6 bg-gray-50 min-h-screen">
-      {/* Thông báo tự làm */}
+      {/* Thông báo */}
       {notification && (
         <Notification
           message={notification.message}
@@ -155,7 +197,7 @@ const UserManagement = () => {
 
       <h2 className="text-3xl font-bold text-gray-800 mb-8 text-center">Quản lý người dùng</h2>
 
-      {/* Form thêm người dùng - ĐÚNG NHƯ BẠN MUỐN */}
+      {/* Form thêm người dùng */}
       <div className="p-8 rounded-xl mb-8 bg-gradient-to-r from-blue-50 to-indigo-50 border shadow-lg">
         <h3 className="text-xl font-bold mb-6 text-gray-800">Thêm người dùng mới</h3>
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -170,9 +212,8 @@ const UserManagement = () => {
               onChange={handleChange}
               className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none transition"
               placeholder="Nguyễn Thị C"
-              required
             />
-            <p className="text-xs text-gray-500 mt-1">Không chứa số hoặc ký tự đặc biệt</p>
+            <p className="text-xs text-gray-500 mt-1">Chỉ chữ cái và khoảng trắng</p>
           </div>
 
           <div>
@@ -185,10 +226,9 @@ const UserManagement = () => {
               value={formData.email}
               onChange={handleChange}
               className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none transition"
-              placeholder="admin@rabbitstore.com"
-              required
+              placeholder="user@example.com"
             />
-            <p className="text-xs text-gray-500 mt-1">Email phải chưa tồn tại trong hệ thống</p>
+            <p className="text-xs text-gray-500 mt-1">Email phải chưa tồn tại</p>
           </div>
 
           <div>
@@ -202,9 +242,8 @@ const UserManagement = () => {
               onChange={handleChange}
               className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none transition"
               placeholder="Tối thiểu 6 ký tự"
-              required
             />
-            <p className="text-xs text-gray-500 mt-1">Chỉ chứa chữ cái và số, ≥ 6 ký tự</p>
+            <p className="text-xs text-gray-500 mt-1">Chỉ chữ cái và số, ≥ 6 ký tự</p>
           </div>
 
           <div>
@@ -216,18 +255,17 @@ const UserManagement = () => {
               className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none transition"
             >
               <option value="customer">Khách hàng</option>
-
               <option value="admin">Quản trị viên</option>
             </select>
           </div>
 
           <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-4">
-            <p className="text-sm font-semibold text-indigo-800 mb-2">Lưu ý quan trọng:</p>
+            <p className="text-sm font-semibold text-indigo-800 mb-2">Lưu ý:</p>
             <ul className="text-xs text-indigo-700 space-y-1 list-disc pl-5">
-              <li>Tên không được chứa số, ký tự đặc biệt</li>
-              <li>Mật khẩu từ 6 ký tự, chỉ gồm chữ và số</li>
-              <li>Email phải là duy nhất trong hệ thống</li>
-              <li>Tài khoản Admin có toàn quyền quản lý</li>
+              <li>Tên không chứa số, ký tự đặc biệt</li>
+              <li>Mật khẩu ≥ 6 ký tự, chỉ chữ và số</li>
+              <li>Email phải duy nhất</li>
+              <li>Admin có toàn quyền</li>
             </ul>
           </div>
 
@@ -241,7 +279,7 @@ const UserManagement = () => {
         </form>
       </div>
 
-      {/* Bảng danh sách người dùng */}
+      {/* Bảng danh sách */}
       <div className="bg-white rounded-xl shadow-lg overflow-hidden">
         <div className="overflow-x-auto">
           <table className="min-w-full">
@@ -320,7 +358,7 @@ const UserManagement = () => {
   );
 };
 
-// Thêm animation vào tailwind (nếu chưa có)
+// Animation cho notification
 const style = document.createElement("style");
 style.textContent = `
   @keyframes slideInRight {
