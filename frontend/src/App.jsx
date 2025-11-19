@@ -2,7 +2,6 @@ import { BrowserRouter, Route, Routes } from "react-router-dom";
 import UserLayout from "./components/Layout/UserLayout";
 import Home from "./pages/Home";
 import { Toaster } from "sonner";
-import "react-toastify/dist/ReactToastify.css";
 
 import Login from "./pages/Login";
 import Register from "./pages/Register";
@@ -35,19 +34,6 @@ const App = () => {
       <BrowserRouter
         future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
       >
-        {/* Chỉ để ToastContainer đúng 1 lần duy nhất ở đây */}
-        <ToastContainer
-          position="top-right"
-          autoClose={3000}
-          hideProgressBar={false}
-          newestOnTop={false}
-          closeOnClick
-          rtl={false}
-          pauseOnFocusLoss
-          draggable
-          pauseOnHover
-          theme="colored"
-        />
         <Toaster position="top-right" />
 
         <Routes>
@@ -56,10 +42,16 @@ const App = () => {
             <Route path="login" element={<Login />} />
             <Route path="register" element={<Register />} />
             <Route path="profile" element={<Profile />} />
-            <Route path="collections/:collection" element={<CollectionPage />} />
+            <Route
+              path="collections/:collection"
+              element={<CollectionPage />}
+            />
             <Route path="product/:id" element={<ProductDetails />} />
             <Route path="checkout" element={<Checkout />} />
-            <Route path="order-confirmation" element={<OrderConfirmationPage />} />
+            <Route
+              path="order-confirmation"
+              element={<OrderConfirmationPage />}
+            />
             <Route path="order/:id" element={<OrderDetailsPage />} />
             <Route path="my-orders" element={<MyOrderPage />} />
           </Route>
