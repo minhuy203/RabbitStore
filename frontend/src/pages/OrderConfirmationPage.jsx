@@ -15,7 +15,7 @@ const OrderConfirmationPage = () => {
     if (checkout && checkout._id) {
       dispatch(clearCart());
       localStorage.removeItem("cart");
-      dispatch(fetchUserOrders()); // Cập nhật danh sách đơn hàng
+      dispatch(fetchUserOrders());
     } else {
       navigate("/my-orders");
     }
@@ -57,12 +57,14 @@ const OrderConfirmationPage = () => {
           {/* Danh sách sản phẩm */}
           <div className="mb-8">
             {checkout.checkoutItems.map((item) => {
-              // Luôn dùng giá discount nếu có
               const price =
-                typeof item.discountPrice === "number" && item.discountPrice > 0
+                typeof item.discountPrice === "number" &&
+                item.discountPrice > 0
                   ? item.discountPrice
                   : item.price || 0;
+
               const total = price * item.quantity;
+
               return (
                 <div key={item.productId} className="flex items-center mb-4">
                   <img
@@ -102,14 +104,18 @@ const OrderConfirmationPage = () => {
                 {paymentMethod || checkout.paymentMethod || "Không xác định"}
               </p>
             </div>
+
             <div>
               <h4 className="text-lg font-semibold mb-2">
                 Thông tin giao hàng
               </h4>
-              <p className="text-gray-600">
-                {checkout.shippingAddress.address}
-              </p>
+              <p className="text-gray-600">{checkout.shippingAddress.address}</p>
               <p className="text-gray-600">{checkout.shippingAddress.city}</p>
+
+              {/* 👉 Thêm số điện thoại ở đây */}
+              <p className="text-gray-600">
+                Số điện thoại: {checkout.shippingAddress.phone}
+              </p>
             </div>
           </div>
         </div>
