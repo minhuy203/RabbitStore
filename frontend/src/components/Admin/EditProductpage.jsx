@@ -6,100 +6,57 @@ import { updateProduct } from "../../redux/slices/adminProductSlice";
 import axios from "axios";
 
 const colors = [
-  "Trắng",
-  "Đen",
-  "Xanh Dương",
-  "Xám",
-  "Xanh Đậm",
-  "Xanh Nhạt",
-  "Xanh Lá",
-  "Xanh Ô Liu",
-  "Đỏ",
-  "Xám Nhạt",
-  "Xám Đậm",
-  "Xanh Lục",
-  "Hồng Phấn",
-  "Be",
-  "Nâu",
-  "Nâu Nhạt",
-  "Kaki",
+  "Trắng", "Đen", "Xanh Dương", "Xám", "Xanh Đậm", "Xanh Nhạt", "Xanh Lá",
+  "Xanh Ô Liu", "Đỏ", "Xám Nhạt", "Xám Đậm", "Xanh Lục", "Hồng Phấn",
+  "Be", "Nâu", "Nâu Nhạt", "Kaki",
 ];
 
 const colorMap = {
-  Trắng: "#FFFFFF",
-  Đen: "#000000",
-  "Xanh Dương": "#0000FF",
-  Xám: "#808080",
-  "Xanh Đậm": "#003087",
-  "Xanh Nhạt": "#ADD8E6",
-  "Xanh Lá": "#008000",
-  "Xanh Ô Liu": "#808000",
-  Đỏ: "#FF0000",
-  "Xám Nhạt": "#D3D3D3",
-  "Xám Đậm": "#A9A9A9",
-  "Xanh Lục": "#008000",
-  "Hồng Phấn": "#FFB6C1",
-  Be: "#F5F5DC",
-  Nâu: "#A52A2A",
-  "Nâu Nhạt": "#DEB887",
-  Kaki: "#C3B091",
+  Trắng: "#FFFFFF", Đen: "#000000", "Xanh Dương": "#0000FF", Xám: "#808080",
+  "Xanh Đậm": "#003087", "Xanh Nhạt": "#ADD8E6", "Xanh Lá": "#008000",
+  "Xanh Ô Liu": "#808000", Đỏ: "#FF0000", "Xám Nhạt": "#D3D3D3",
+  "Xám Đậm": "#A9A9A9", "Xanh Lục": "#008000", "Hồng Phấn": "#FFB6C1",
+  Be: "#F5F5DC", Nâu: "#A52A2A", "Nâu Nhạt": "#DEB887", Kaki: "#C3B091",
 };
+
+const sizes = ["XS", "S", "M", "L", "XL", "XXL"];
 
 const EditProductPage = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { id } = useParams();
 
-  const { selectedProduct, loading, error } = useSelector(
-    (state) => state.products
-  );
+  const { selectedProduct, loading, error } = useSelector((state) => state.products);
 
   const [productData, setProductData] = useState({
-    name: "",
-    description: "",
-    price: 0,
-    discountPrice: 0,
-    countInStock: 0,
-    sku: "",
-    category: "",
-    brand: "",
-    sizes: [],
-    colors: [],
-    collections: "",
-    material: "",
-    gender: "",
-    images: [],
+    name: "", description: "", price: 0, discountPrice: 0, countInStock: 0,
+    sku: "", category: "", brand: "", sizes: [], colors: [], collections: "",
+    material: "", gender: "", images: [],
   });
 
   const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState("");
 
-  // Lấy product theo id
   useEffect(() => {
-    if (id) {
-      dispatch(fetchProductsDetails(id));
-    }
+    if (id) dispatch(fetchProductsDetails(id));
   }, [dispatch, id]);
 
-  // Set data khi fetch về
   useEffect(() => {
     if (selectedProduct) {
       setProductData({
         ...selectedProduct,
-        gender:
-          selectedProduct.gender === "male"
-            ? "Nam"
-            : selectedProduct.gender === "female"
-            ? "Nữ"
-            : selectedProduct.gender || "",
-        colors: selectedProduct.colors || [], // Đảm bảo colors là mảng
+        gender: selectedProduct.gender === "male" ? "Nam" :
+                selectedProduct.gender === "female" ? "Nữ" :
+                selectedProduct.gender || "",
+        sizes: Array.isArray(selectedProduct.sizes) ? selectedProduct.sizes : [],
+        colors: Array.isArray(selectedProduct.colors) ? selectedProduct.colors : [],
       });
     }
   }, [selectedProduct]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setProductData((prevData) => ({ ...prevData, [name]: value }));
+    setProductData(prev => ({ ...prev, [name]: value }));
   };
 
   const handleImageUpload = async (e) => {
@@ -118,16 +75,14 @@ const EditProductPage = () => {
       );
 
       const imageUrl = data.imageUrl || data.url || data.path;
-
-      setProductData((prev) => ({
+      setProductData(prev => ({
         ...prev,
         images: [...prev.images, { url: imageUrl, altText: file.name }],
       }));
-
       e.target.value = "";
     } catch (err) {
       console.error("Upload error:", err);
-      setMessage("❌ Upload ảnh thất bại!");
+      setMessage("Upload ảnh thất bại!");
       setTimeout(() => setMessage(""), 3000);
     } finally {
       setUploading(false);
@@ -138,8 +93,6 @@ const EditProductPage = () => {
     e.preventDefault();
     try {
       await dispatch(updateProduct({ id, productData })).unwrap();
-
-      // Gửi thông báo về trang quản lý
       navigate("/admin/products", {
         state: { message: "Cập nhật sản phẩm thành công!", type: "success" }
       });
@@ -158,124 +111,63 @@ const EditProductPage = () => {
       <h2 className="text-3xl font-bold mb-4">Chỉnh sửa sản phẩm</h2>
 
       {message && (
-        <div
-          className={`mb-4 p-2 rounded text-white ${
-            message.includes("❌") ? "bg-red-500" : "bg-green-500"
-          }`}
-        >
+        <div className={`mb-4 p-2 rounded text-white ${message.includes("thất bại") ? "bg-red-500" : "bg-green-500"}`}>
           {message}
         </div>
       )}
 
       <form onSubmit={handleSubmit}>
-        {/* Tên sản phẩm */}
+        {/* Tên, mô tả, giá... (giữ nguyên) */}
         <div className="mb-4">
           <label className="block font-semibold mb-2">Tên sản phẩm</label>
-          <input
-            type="text"
-            name="name"
-            value={productData.name}
-            onChange={handleChange}
-            className="w-full border border-gray-300 rounded-md p-2"
-            required
-          />
+          <input type="text" name="name" value={productData.name} onChange={handleChange} className="w-full border rounded-md p-2" required />
         </div>
 
-        {/* Mô tả */}
         <div className="mb-4">
           <label className="block font-semibold mb-2">Mô tả</label>
-          <textarea
-            name="description"
-            value={productData.description}
-            onChange={handleChange}
-            className="w-full border border-gray-300 rounded-md p-2"
-            rows={4}
-            required
-          />
+          <textarea name="description" value={productData.description} onChange={handleChange} rows={4} className="w-full border rounded-md p-2" required />
         </div>
 
-        {/* Giá và giá giảm */}
         <div className="grid grid-cols-2 gap-4 mb-4">
           <div>
             <label className="block font-semibold mb-2">Giá</label>
-            <input
-              type="number"
-              name="price"
-              value={productData.price}
-              onChange={(e) =>
-                setProductData((prev) => ({
-                  ...prev,
-                  price: Number(e.target.value),
-                }))
-              }
-              className="w-full border border-gray-300 rounded-md p-2"
-            />
+            <input type="number" name="price" value={productData.price}
+              onChange={e => setProductData(prev => ({ ...prev, price: Number(e.target.value) }))}
+              className="w-full border rounded-md p-2" required />
           </div>
           <div>
             <label className="block font-semibold mb-2">Giá giảm</label>
-            <input
-              type="number"
-              name="discountPrice"
-              value={productData.discountPrice}
-              onChange={(e) =>
-                setProductData((prev) => ({
-                  ...prev,
-                  discountPrice: Number(e.target.value),
-                }))
-              }
-              className="w-full border border-gray-300 rounded-md p-2"
-            />
+            <input type="number" name="discountPrice" value={productData.discountPrice}
+              onChange={e => setProductData(prev => ({ ...prev, discountPrice: Number(e.target.value) }))}
+              className="w-full border rounded-md p-2" />
           </div>
         </div>
 
-        {/* Số lượng */}
         <div className="mb-4">
           <label className="block font-semibold mb-2">Số lượng trong kho</label>
-          <input
-            type="number"
-            name="countInStock"
-            value={productData.countInStock}
-            onChange={handleChange}
-            className="w-full border border-gray-300 rounded-md p-2"
-          />
+          <input type="number" name="countInStock" value={productData.countInStock} onChange={handleChange}
+            className="w-full border rounded-md p-2" required />
         </div>
 
-        {/* SKU */}
         <div className="mb-4">
-          <label className="block font-semibold mb-2">Mã SP</label>
-          <input
-            type="text"
-            name="sku"
-            value={productData.sku}
-            onChange={handleChange}
-            className="w-full border border-gray-300 rounded-md p-2"
-          />
+          <label className="block font-semibold mb-2">Mã SP (SKU)</label>
+          <input type="text" name="sku" value={productData.sku} onChange={handleChange}
+            className="w-full border rounded-md p-2" required />
         </div>
 
-        {/* Danh mục */}
+        {/* Danh mục, thương hiệu, giới tính... (giữ nguyên) */}
         <div className="mb-4">
           <label className="block font-semibold mb-2">Danh mục</label>
-          <select
-            name="category"
-            value={productData.category}
-            onChange={handleChange}
-            className="w-full border border-gray-300 rounded-md p-2"
-          >
+          <select name="category" value={productData.category} onChange={handleChange} className="w-full border rounded-md p-2">
             <option value="">Chọn danh mục</option>
             <option value="Phần Trên">Phần Trên</option>
             <option value="Phần Dưới">Phần Dưới</option>
           </select>
         </div>
 
-        {/* Thương hiệu */}
         <div className="mb-4">
           <label className="block font-semibold mb-2">Thương hiệu</label>
-          <select
-            name="brand"
-            value={productData.brand}
-            onChange={handleChange}
-            className="w-full border border-gray-300 rounded-md p-2"
-          >
+          <select name="brand" value={productData.brand} onChange={handleChange} className="w-full border rounded-md p-2">
             <option value="">Chọn thương hiệu</option>
             <option value="Việt Tiến">Việt Tiến</option>
             <option value="NEM">NEM</option>
@@ -285,41 +177,46 @@ const EditProductPage = () => {
           </select>
         </div>
 
-        {/* Giới tính */}
         <div className="mb-4">
           <label className="block font-semibold mb-2">Giới tính</label>
-          <select
-            name="gender"
-            value={productData.gender}
-            onChange={handleChange}
-            className="w-full border border-gray-300 rounded-md p-2"
-          >
+          <select name="gender" value={productData.gender} onChange={handleChange} className="w-full border rounded-md p-2">
             <option value="">Chọn giới tính</option>
             <option value="Nam">Nam</option>
             <option value="Nữ">Nữ</option>
           </select>
         </div>
 
-        {/* Sizes */}
+        {/* ==== SIZES - ĐÃ CHUYỂN SANG CHECKBOX ==== */}
         <div className="mb-4">
-          <label className="block font-semibold mb-2">
-            Kích cỡ (cách nhau bởi dấu ", ")
-          </label>
-          <input
-            type="text"
-            name="sizes"
-            value={productData.sizes.join(", ")}
-            onChange={(e) =>
-              setProductData({
-                ...productData,
-                sizes: e.target.value.split(",").map((s) => s.trim()),
-              })
-            }
-            className="w-full border border-gray-300 rounded-md p-2"
-          />
+          <label className="block font-semibold mb-2">Kích cỡ</label>
+          <div className="flex flex-wrap gap-6">
+            {sizes.map((size) => (
+              <div key={size} className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id={`size-${size}`}
+                  value={size}
+                  checked={productData.sizes.includes(size)}
+                  onChange={(e) => {
+                    const { value, checked } = e.target;
+                    setProductData(prev => ({
+                      ...prev,
+                      sizes: checked
+                        ? [...prev.sizes, value]
+                        : prev.sizes.filter(s => s !== value),
+                    }));
+                  }}
+                  className="h-5 w-5 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                />
+                <label htmlFor={`size-${size}`} className="cursor-pointer text-lg font-medium">
+                  {size}
+                </label>
+              </div>
+            ))}
+          </div>
         </div>
 
-        {/* Colors */}
+        {/* Colors - giữ nguyên */}
         <div className="mb-4">
           <label className="block font-semibold mb-2">Màu sắc</label>
           <div className="flex flex-wrap gap-4">
@@ -327,29 +224,21 @@ const EditProductPage = () => {
               <div key={color} className="flex items-center gap-2">
                 <input
                   type="checkbox"
-                  name="colors"
                   value={color}
                   checked={productData.colors.includes(color)}
                   onChange={(e) => {
                     const { value, checked } = e.target;
-                    setProductData((prev) => ({
+                    setProductData(prev => ({
                       ...prev,
-                      colors: checked
-                        ? [...prev.colors, value]
-                        : prev.colors.filter((c) => c !== value),
+                      colors: checked ? [...prev.colors, value] : prev.colors.filter(c => c !== value),
                     }));
                   }}
                   className="h-4 w-4 text-blue-500 focus:ring-blue-400 border-gray-300"
                   id={`color-${color}`}
                 />
-                <label
-                  htmlFor={`color-${color}`}
-                  className="flex items-center gap-2 cursor-pointer"
-                >
-                  <div
-                    className="w-6 h-6 rounded-full border border-gray-300"
-                    style={{ backgroundColor: colorMap[color] || "#CCCCCC" }}
-                  ></div>
+                <label htmlFor={`color-${color}`} className="flex items-center gap-2 cursor-pointer">
+                  <div className="w-6 h-6 rounded-full border border-gray-300"
+                    style={{ backgroundColor: colorMap[color] || "#CCCCCC" }}></div>
                   <span>{color}</span>
                 </label>
               </div>
@@ -357,27 +246,16 @@ const EditProductPage = () => {
           </div>
         </div>
 
-        {/* Collections */}
+        {/* Collections, Material, Upload ảnh... (giữ nguyên) */}
         <div className="mb-4">
           <label className="block font-semibold mb-2">Bộ sưu tập</label>
-          <input
-            type="text"
-            name="collections"
-            value={productData.collections}
-            onChange={handleChange}
-            className="w-full border border-gray-300 rounded-md p-2"
-          />
+          <input type="text" name="collections" value={productData.collections} onChange={handleChange}
+            className="w-full border rounded-md p-2" />
         </div>
 
-        {/* Material */}
         <div className="mb-4">
           <label className="block font-semibold mb-2">Chất liệu</label>
-          <select
-            name="material"
-            value={productData.material}
-            onChange={handleChange}
-            className="w-full border border-gray-300 rounded-md p-2"
-          >
+          <select name="material" value={productData.material} onChange={handleChange} className="w-full border rounded-md p-2">
             <option value="">Chọn chất liệu</option>
             <option value="Vải cotton">Vải cotton</option>
             <option value="Len">Len</option>
@@ -392,51 +270,30 @@ const EditProductPage = () => {
         <div className="mb-4">
           <label className="block font-semibold mb-2">Đăng tải ảnh</label>
           <div className="flex items-center gap-4">
-            <label
-              htmlFor="file-upload"
-              className="cursor-pointer bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600"
-            >
+            <label htmlFor="file-upload" className="cursor-pointer bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600">
               Chọn tệp
             </label>
-            <input
-              id="file-upload"
-              type="file"
-              accept="image/*"
-              onChange={handleImageUpload}
-              className="hidden"
-            />
+            <input id="file-upload" type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
             {uploading && <p>Đang tải ảnh...</p>}
           </div>
 
           <div className="flex gap-4 mt-4 flex-wrap">
             {productData.images.map((image, index) => (
               <div key={index} className="relative">
-                <img
-                  src={image.url}
-                  alt={image.altText || "Ảnh sản phẩm"}
-                  className="w-20 h-20 object-cover rounded-md shadow-md"
-                />
-                <button
-                  type="button"
-                  onClick={() =>
-                    setProductData((prev) => ({
-                      ...prev,
-                      images: prev.images.filter((_, i) => i !== index),
-                    }))
-                  }
-                  className="absolute top-0 right-0 bg-red-500 text-white text-xs px-1 rounded"
-                >
-                  ✕
-                </button>
+                <img src={image.url} alt={image.altText || "Ảnh sản phẩm"}
+                  className="w-20 h-20 object-cover rounded-md shadow-md" />
+                <button type="button" onClick={() => setProductData(prev => ({
+                  ...prev,
+                  images: prev.images.filter((_, i) => i !== index)
+                }))}
+                  className="absolute top-0 right-0 bg-red-500 text-white text-xs px-1 rounded">X</button>
               </div>
             ))}
           </div>
         </div>
 
-        <button
-          type="submit"
-          className="w-full bg-green-500 text-white py-2 rounded-md hover:bg-green-600 transition-colors"
-        >
+        <button type="submit"
+          className="w-full bg-green-500 text-white py-3 rounded-md hover:bg-green-600 transition-colors text-lg font-semibold">
           Cập nhật sản phẩm
         </button>
       </form>
