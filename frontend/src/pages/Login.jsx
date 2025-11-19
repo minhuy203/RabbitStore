@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import loginImg from "../assets/login.webp";
+import login from "../assets/login.webp";   // ← đúng tên như file gốc của bạn
 import { loginUser, clearError } from "../redux/slices/authSlice";
 import { fetchCart, mergeCart } from "../redux/slices/cartSlice";
 import { useDispatch, useSelector } from "react-redux";
@@ -48,7 +48,7 @@ const Login = () => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
       <div className="flex w-full max-w-4xl shadow-2xl rounded-3xl overflow-hidden bg-white">
-        {/* Form bên trái - mỏng hơn, cao hơn */}
+        {/* Form bên trái - mỏng, đẹp */}
         <div className="w-full lg:w-[420px] p-10 flex flex-col justify-center">
           <form onSubmit={handleSubmit} className="space-y-5">
             <div className="text-center">
@@ -107,10 +107,10 @@ const Login = () => {
           </form>
         </div>
 
-        {/* Ảnh bên phải - cao hơn form, đẹp lung linh */}
+        {/* Ảnh bên phải - HIỆN RÕ 100% */}
         <div className="hidden lg:block relative min-h-[620px]">
           <img
-            src={loginImg}
+            src={login}   
             alt="Login"
             className="absolute inset-0 w-full h-full object-cover"
           />

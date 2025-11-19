@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import registerImg from "../assets/register.webp";
+import register from "../assets/register.webp";   // ← đúng tên như file gốc của bạn
 import { registerUser, clearError } from "../redux/slices/authSlice";
 import { mergeCart } from "../redux/slices/cartSlice";
 import { useDispatch, useSelector } from "react-redux";
@@ -70,7 +70,7 @@ const Register = () => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
       <div className="flex w-full max-w-4xl shadow-2xl rounded-3xl overflow-hidden bg-white">
-        {/* Form mỏng hơn */}
+        {/* Form bên trái */}
         <div className="w-full lg:w-[420px] p-10 flex flex-col justify-center">
           <form onSubmit={handleSubmit} className="space-y-5">
             <div className="text-center">
@@ -121,9 +121,13 @@ const Register = () => {
           </form>
         </div>
 
-        {/* Ảnh cao hơn, đẹp hơn */}
+        {/* Ảnh bên phải - HIỆN RÕ 100% */}
         <div className="hidden lg:block relative min-h-[660px]">
-          <img src={registerImg} alt="Register" className="absolute inset-0 w-full h-full object-cover" />
+          <img
+            src={register}   
+            alt="Register"
+            className="absolute inset-0 w-full h-full object-cover"
+          />
           <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
         </div>
       </div>
