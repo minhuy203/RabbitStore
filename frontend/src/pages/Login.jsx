@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import login from "../assets/login.webp";   // ← đúng tên như file gốc của bạn
+import login from "../assets/login.webp";
 import { loginUser, clearError } from "../redux/slices/authSlice";
 import { fetchCart, mergeCart } from "../redux/slices/cartSlice";
 import { useDispatch, useSelector } from "react-redux";
@@ -46,10 +46,10 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
-      <div className="flex w-full max-w-4xl shadow-2xl rounded-3xl overflow-hidden bg-white">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4 py-8">
+      <div className="flex w-full max-w-5xl shadow-2xl rounded-3xl overflow-hidden bg-white">
         {/* Form bên trái - mỏng, đẹp */}
-        <div className="w-full lg:w-[420px] p-10 flex flex-col justify-center">
+        <div className="w-full lg:w-96 xl:w-[420px] p-8 lg:p-10 flex flex-col justify-center">
           <form onSubmit={handleSubmit} className="space-y-5">
             <div className="text-center">
               <h2 className="text-2xl font-bold text-gray-800">RabbitStore</h2>
@@ -88,31 +88,25 @@ const Login = () => {
               </ul>
             </div>
 
-            <button
-              type="submit"
-              className="w-full bg-black text-white py-3.5 rounded-xl font-bold hover:bg-gray-900 transition"
-            >
+            <button className="w-full bg-black text-white py-3.5 rounded-xl font-bold hover:bg-gray-900 transition">
               Đăng nhập
             </button>
 
             <p className="text-center text-sm text-gray-600">
               Chưa có tài khoản?{" "}
-              <Link
-                to={`/register?redirect=${encodeURIComponent(redirect)}`}
-                className="text-blue-600 font-semibold hover:underline"
-              >
+              <Link to={`/register?redirect=${encodeURIComponent(redirect)}`} className="text-blue-600 font-semibold hover:underline">
                 Đăng ký ngay
               </Link>
             </p>
           </form>
         </div>
 
-        {/* Ảnh bên phải - HIỆN RÕ 100% */}
-        <div className="hidden lg:block relative min-h-[620px]">
+        {/* Ảnh bên phải - ĐÃ FIX 100%, HIỆN TO ĐẸP */}
+        <div className="hidden lg:block w-[500px] xl:w-[580px] relative overflow-hidden">
           <img
-            src={login}   
+            src={login}
             alt="Login"
-            className="absolute inset-0 w-full h-full object-cover"
+            className="w-full h-full object-cover"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
         </div>
