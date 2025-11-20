@@ -35,7 +35,7 @@ try {
 }
 
 // Frontend URLs
-const FRONTEND_BASE = "https://rabbit-store-henna.vercel.app";
+const FRONTEND_BASE = "https://rabbit-store-yvxj.vercel.app/";
 const SUCCESS_PAGE = `${FRONTEND_BASE}/order-success`;
 const FAILED_PAGE = `${FRONTEND_BASE}/checkout`;
 
