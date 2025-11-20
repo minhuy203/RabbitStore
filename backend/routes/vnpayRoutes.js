@@ -40,7 +40,7 @@ router.post("/create-payment", async (req, res) => {
 
       // HIỆN QR NGAY LẬP TỨC (rất quan trọng)
       vnp_OrderType: "250000",     // Mã danh mục QR VNPay
-      vnp_BankCode: "QRCODE",      // Bắt buộc để hiện QR
+      vnp_BankCode: "qrcode",      // Bắt buộc để hiện QR
 
       vnp_ReturnUrl: `${VNPAY_RETURN_URL}?checkoutId=${checkoutId}`,
       vnp_TxnRef: checkoutId + "_" + Date.now(),
