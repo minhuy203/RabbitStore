@@ -130,7 +130,8 @@ router.post("/:id/finalize", protect, async (req, res) => {
 
     if (
       checkout.paymentStatus === "paid" ||
-      checkout.paymentStatus === "unpaid"
+      checkout.paymentStatus === "unpaid"||
+      checkout.paymentStatus === "pending" // Cho VNPay
     ) {
       // 🔥 Trừ tồn kho cho từng sản phẩm
       for (const item of checkout.checkoutItems) {

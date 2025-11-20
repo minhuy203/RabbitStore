@@ -12,7 +12,16 @@ const OrderConfirmationPage = () => {
   const { checkout } = useSelector((state) => state.checkout);
 
   useEffect(() => {
-    if (checkout && checkout._id) {
+    const urlParams = new URLSearchParams(window.location.search);
+    const fromVNPay = urlParams.get("from") === "vnpay";
+    const checkoutIdFromUrl = urlParams.get("checkoutId");
+
+    if (fromVNPay && checkoutIdFromUrl) {
+      // Từ VNPay trả về thành công
+      dispatch(clearCart());
+      localStorage.removeItem("cart");
+      dispatch(fetchUserOrders());
+    } else if (checkout && checkout._id) {
       dispatch(clearCart());
       localStorage.removeItem("cart");
       dispatch(fetchUserOrders());
@@ -20,7 +29,6 @@ const OrderConfirmationPage = () => {
       navigate("/my-orders");
     }
   }, [checkout, dispatch, navigate]);
-
   const calculatedEstimatedDelivery = (createdAt) => {
     const orderDate = new Date(createdAt);
     orderDate.setDate(orderDate.getDate() + 3);
@@ -58,8 +66,7 @@ const OrderConfirmationPage = () => {
           <div className="mb-8">
             {checkout.checkoutItems.map((item) => {
               const price =
-                typeof item.discountPrice === "number" &&
-                item.discountPrice > 0
+                typeof item.discountPrice === "number" && item.discountPrice > 0
                   ? item.discountPrice
                   : item.price || 0;
 
@@ -109,7 +116,9 @@ const OrderConfirmationPage = () => {
               <h4 className="text-lg font-semibold mb-2">
                 Thông tin giao hàng
               </h4>
-              <p className="text-gray-600">{checkout.shippingAddress.address}</p>
+              <p className="text-gray-600">
+                {checkout.shippingAddress.address}
+              </p>
               <p className="text-gray-600">{checkout.shippingAddress.city}</p>
 
               {/* 👉 Thêm số điện thoại ở đây */}

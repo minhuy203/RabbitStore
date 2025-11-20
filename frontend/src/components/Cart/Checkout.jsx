@@ -224,6 +224,42 @@ const Checkout = () => {
 
   const paypalAmount = (cart.totalPrice / 25000).toFixed(2);
 
+  const handleVNPayPayment = async () => {
+    try {
+      const checkoutId = await handleCreateCheckout(
+        { preventDefault: () => {} },
+        "VNPay",
+        "pending"
+      );
+
+      if (!checkoutId) throw new Error("Không tạo được đơn hàng");
+
+      const res = await axios.post(
+        `${import.meta.env.VITE_BACKEND_URL}/api/vnpay/create-payment`,
+        {
+          checkoutId,
+          amount: cart.totalPrice,
+          orderInfo: "Thanh toán đơn hàng Rabbit Store",
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("userToken")}`,
+          },
+        }
+      );
+
+      if (res.data.paymentUrl) {
+        window.location.href = res.data.paymentUrl;
+      }
+    } catch (err) {
+      console.error("Lỗi VNPay:", err);
+      alert(
+        "Thanh toán VNPay thất bại: " +
+          (err.response?.data?.message || err.message)
+      );
+    }
+  };
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-7xl mx-auto py-10 px-6 tracking-tighter">
       {/* Form thanh toán */}
@@ -352,6 +388,15 @@ const Checkout = () => {
                     alert("Thanh toán PayPal thất bại. Hãy thử lại: " + err)
                   }
                 />
+                <button
+                  onClick={handleVNPayPayment}
+                  className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-4 rounded-lg font-medium text-lg hover:from-blue-700 hover:to-purple-700 transition shadow-lg flex items-center justify-center gap-3"
+                >
+                  <span>VNPay</span>
+                  <span className="text-sm">
+                    Thanh toán qua ATM • Thẻ • QR • Ví
+                  </span>
+                </button>
                 <button
                   onClick={handleCODPayment}
                   className="w-full bg-green-600 text-white py-3 rounded hover:bg-green-700"
