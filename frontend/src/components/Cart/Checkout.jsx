@@ -229,7 +229,7 @@ const Checkout = () => {
       const checkoutId = await handleCreateCheckout(
         { preventDefault: () => {} },
         "VNPay",
-        "pending"
+        "unpaid"
       );
 
       if (!checkoutId) throw new Error("Không tạo được đơn hàng");
