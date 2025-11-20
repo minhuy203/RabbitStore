@@ -1,84 +1,104 @@
-// routes/vnpayRoutes.js - PHIÊN BẢN ĐÃ SỬA HOÀN HẢO, KHÔNG CÒN LỖI 03
+// routes/vnpayRoutes.js
 const express = require("express");
 const router = express.Router();
 const crypto = require("crypto");
-const querystring = require("qs");
+const qs = require("qs");
 const Checkout = require("../models/Checkout");
 
-// Cấu hình từ .env (bắt buộc có)
+// ==============================
+// CẤU HÌNH VNPay
+// ==============================
 const VNPAY_TMN_CODE = (process.env.VNPAY_TMN_CODE || "").trim();
 const VNPAY_HASH_SECRET = (process.env.VNPAY_HASH_SECRET || "").trim();
-const VNPAY_RETURN_URL = (process.env.VNPAY_RETURN_URL || "").trim(); // ví dụ: https://yoursite.com/vnpay-return
+const VNPAY_RETURN_URL = (process.env.VNPAY_RETURN_URL || "").trim();
 const VNPAY_PAY_URL = "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html";
 
 if (!VNPAY_TMN_CODE || !VNPAY_HASH_SECRET || !VNPAY_RETURN_URL) {
-  console.error("Cảnh báo: Thiếu cấu hình VNPAY trong .env");
+  console.error("⚠️ Thiếu cấu hình VNPay trong file .env");
 }
 
-// Hàm sắp xếp object chính xác theo chuẩn VNPAY
+// ==============================
+// HÀM FORMAT NGÀY CHUẨN VNPay GMT+7
+// ==============================
+function formatDateVN(date) {
+  const yyyy = date.getFullYear();
+  const MM = String(date.getMonth() + 1).padStart(2, "0");
+  const dd = String(date.getDate()).padStart(2, "0");
+  const HH = String(date.getHours()).padStart(2, "0");
+  const mm = String(date.getMinutes()).padStart(2, "0");
+  const ss = String(date.getSeconds()).padStart(2, "0");
+  return `${yyyy}${MM}${dd}${HH}${mm}${ss}`;
+}
+
+// ==============================
+// SORT OBJECT CHUẨN VNPay
+// ==============================
 function sortObject(obj) {
   const sorted = {};
   const keys = Object.keys(obj).sort();
-  for (const key of keys) {
-    sorted[key] = obj[key];
-  }
+  for (const key of keys) sorted[key] = obj[key];
   return sorted;
 }
 
-// Tạo URL thanh toán
+// ==============================
+// TẠO URL THANH TOÁN VNPay
+// ==============================
 router.post("/create-payment", async (req, res) => {
   try {
     const { checkoutId, amount, orderInfo = "Thanh toan don hang Rabbit Store" } = req.body;
 
     if (!checkoutId || !amount || amount < 1000) {
-      return res.status(400).json({ message: "Thiếu hoặc sai thông tin thanh toán" });
+      return res.status(400).json({ message: "Thiếu hoặc sai thông tin đầu vào" });
     }
 
-    process.env.TZ = "Asia/Ho_Chi_Minh"; // Quan trọng: múi giờ GMT+7
+    // Múi giờ Việt Nam GMT+7
+    process.env.TZ = "Asia/Ho_Chi_Minh";
+
     const date = new Date();
+    const createDate = formatDateVN(date);
 
-    const createDate = date.toISOString().replace(/[^0-9]/g, "").slice(0, 14); // YYYYMMDDHHmmss
     const expireDate = new Date(date.getTime() + 15 * 60 * 1000);
-    const vnp_ExpireDate = expireDate.toISOString().replace(/[^0-9]/g, "").slice(0, 14);
+    const vnp_ExpireDate = formatDateVN(expireDate);
 
-    const vnp_TxnRef = checkoutId; // Dùng checkoutId làm mã giao dịch (đảm bảo duy nhất mỗi ngày)
-
-    const ipAddr =
-      req.headers["x-forwarded-for"]?.split(",").shift() ||
-      req.ip ||
-      req.socket.remoteAddress ||
+    // Đảm bảo IP luôn là IPv4
+    let ipAddr =
+      req.headers["x-forwarded-for"]?.split(",")[0] ||
+      req.connection?.remoteAddress ||
+      req.socket?.remoteAddress ||
       "127.0.0.1";
+
+    if (ipAddr.includes("::")) ipAddr = "127.0.0.1";
+
+    const vnp_TxnRef = String(checkoutId);
 
     let vnp_Params = {
       vnp_Version: "2.1.0",
       vnp_Command: "pay",
       vnp_TmnCode: VNPAY_TMN_CODE,
-      vnp_Amount: String(amount * 100),           // Phải là chuỗi số
-      vnp_CreateDate: createDate,
+      vnp_Amount: String(amount * 100),
       vnp_CurrCode: "VND",
+      vnp_TxnRef: vnp_TxnRef,
+      vnp_OrderInfo: encodeURIComponent(orderInfo + " - ID: " + checkoutId),
+      vnp_OrderType: "other", // Chuẩn VNPay
+      vnp_ReturnUrl: `${VNPAY_RETURN_URL}?checkoutId=${checkoutId}`,
       vnp_IpAddr: ipAddr,
       vnp_Locale: "vn",
-      vnp_OrderInfo: orderInfo + " - ID: " + checkoutId,
-      vnp_OrderType: "250000",                     // Mã danh mục hàng hóa (bắt buộc)
-      vnp_ReturnUrl: VNPAY_RETURN_URL + "?checkoutId=" + checkoutId, // Không encode ở đây
-      vnp_TxnRef: vnp_TxnRef,
-      vnp_ExpireDate: vnp_ExpireDate,              // Bắt buộc có
+      vnp_CreateDate: createDate,
+      vnp_ExpireDate: vnp_ExpireDate
     };
 
-    // Nếu muốn mặc định QR thì thêm (tùy chọn)
-    // vnp_Params.vnp_BankCode = "VNPAYQR"; // hoặc bỏ trống để khách chọn
-
-    // Sắp xếp và tạo chữ ký
+    // Sort params
     vnp_Params = sortObject(vnp_Params);
 
-    const signData = querystring.stringify(vnp_Params, { encode: false });
+    // Tạo HMAC SHA512
+    const signData = qs.stringify(vnp_Params, { encode: false });
     const hmac = crypto.createHmac("sha512", VNPAY_HASH_SECRET);
-    const vnp_SecureHash = hmac.update(Buffer.from(signData, "utf-8")).digest("hex");
+    const vnp_SecureHash = hmac.update(Buffer.from(signData)).digest("hex");
 
     vnp_Params.vnp_SecureHash = vnp_SecureHash;
 
-    const paymentUrl =
-      VNPAY_PAY_URL + "?" + querystring.stringify(vnp_Params, { encode: false });
+    // Tạo URL thanh toán
+    const paymentUrl = VNPAY_PAY_URL + "?" + qs.stringify(vnp_Params, { encode: false });
 
     return res.json({
       success: true,
@@ -86,58 +106,64 @@ router.post("/create-payment", async (req, res) => {
       orderId: vnp_TxnRef,
       amount: amount,
     });
+
   } catch (error) {
-    console.error("Lỗi tạo payment URL VNPAY:", error);
-    return res.status(500).json({ message: "Lỗi hệ thống thanh toán" });
+    console.error("❌ Lỗi tạo payment VNPay:", error);
+    res.status(500).json({ message: "Lỗi hệ thống." });
   }
 });
 
-// Xử lý return từ VNPAY
+// ==============================
+// XỬ LÝ RETURN VNPay
+// ==============================
 router.get("/vnpay-return", async (req, res) => {
-  let vnp_Params = { ...req.query };
-  const secureHash = vnp_Params.vnp_SecureHash;
+  try {
+    let vnp_Params = { ...req.query };
+    const secureHash = vnp_Params.vnp_SecureHash;
 
-  delete vnp_Params.vnp_SecureHash;
-  delete vnp_Params.vnp_SecureHashType;
+    delete vnp_Params.vnp_SecureHash;
+    delete vnp_Params.vnp_SecureHashType;
 
-  vnp_Params = sortObject(vnp_Params);
+    vnp_Params = sortObject(vnp_Params);
 
-  const signData = querystring.stringify(vnp_Params, { encode: false });
-  const hmac = crypto.createHmac("sha512", VNPAY_HASH_SECRET);
-  const signed = hmac.update(Buffer.from(signData, "utf-8")).digest("hex");
+    const signData = qs.stringify(vnp_Params, { encode: false });
+    const hmac = crypto.createHmac("sha512", VNPAY_HASH_SECRET);
+    const signed = hmac.update(Buffer.from(signData)).digest("hex");
 
-  const checkoutId = vnp_Params.checkoutId || req.query.checkoutId;
+    const checkoutId = req.query.checkoutId;
 
-  // Kiểm tra checksum và mã phản hồi
-  if (secureHash === signed) {
+    if (secureHash !== signed) {
+      return res.redirect(`http://localhost:5173/checkout?payment=failed&code=97`);
+    }
+
+    // Thành công (00)
     if (vnp_Params.vnp_ResponseCode === "00") {
-      // Thanh toán thành công
-      try {
-        const checkout = await Checkout.findById(checkoutId);
-        if (checkout && checkout.paymentStatus === "unpaid") {
-          checkout.paymentStatus = "paid";
-          checkout.isPaid = true;
-          checkout.paidAt = new Date();
-          checkout.paymentDetails = {
-            method: "VNPay",
-            transactionId: vnp_Params.vnp_TxnRef,
-            vnp_TransactionNo: vnp_Params.vnp_TransactionNo || "",
-            vnp_ResponseCode: vnp_Params.vnp_ResponseCode,
-          };
-          await checkout.save();
-        }
-      } catch (err) {
-        console.error("Lỗi cập nhật đơn hàng:", err);
+      const checkout = await Checkout.findById(checkoutId);
+
+      if (checkout && checkout.paymentStatus === "unpaid") {
+        checkout.paymentStatus = "paid";
+        checkout.isPaid = true;
+        checkout.paidAt = new Date();
+        checkout.paymentDetails = {
+          method: "VNPay",
+          transactionId: vnp_Params.vnp_TxnRef,
+          vnp_TransactionNo: vnp_Params.vnp_TransactionNo || "",
+          vnp_ResponseCode: vnp_Params.vnp_ResponseCode,
+        };
+        await checkout.save();
       }
 
       return res.redirect(`http://localhost:5173/order-success?checkoutId=${checkoutId}`);
-    } else {
-      // Thanh toán thất bại
-      return res.redirect(`http://localhost:5173/checkout?payment=failed&code=${vnp_Params.vnp_ResponseCode}`);
     }
-  } else {
-    // Chữ ký không hợp lệ
-    return res.redirect(`http://localhost:5173/checkout?payment=failed&code=97`);
+
+    // Thất bại
+    return res.redirect(
+      `http://localhost:5173/checkout?payment=failed&code=${vnp_Params.vnp_ResponseCode}`
+    );
+
+  } catch (err) {
+    console.error("❌ Lỗi xử lý return VNPay:", err);
+    res.redirect(`http://localhost:5173/checkout?payment=failed&code=99`);
   }
 });
 
