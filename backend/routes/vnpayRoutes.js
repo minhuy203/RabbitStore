@@ -14,9 +14,6 @@ const VNPAY_HASH_SECRET = (process.env.VNPAY_HASH_SECRET || "").trim();
 const VNPAY_RETURN_URL = (process.env.VNPAY_RETURN_URL || "").trim(); // http://localhost:9000/api/vnpay/vnpay-return
 const VNPAY_PAY_URL = "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html";
 
-if (!VNPAY_TMN_CODE || !VNPAY_HASH_SECRET || !VNPAY_RETURN_URL) {
-  throw new Error("Thiếu cấu hình VNPAY trong file .env");
-}
 
 // ==================== HELPER ====================
 function getVietnamTime() {
