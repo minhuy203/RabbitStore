@@ -39,11 +39,11 @@ router.post("/", protect, async (req, res) => {
         "Missing required fields: shippingAddress, paymentMethod, or totalPrice",
     });
   }
-  if (!["paid", "unpaid"].includes(paymentStatus)) {
+  if (!["paid", "unpaid", "pending"].includes(paymentStatus)) {
     console.log("Validation failed: Invalid paymentStatus", { paymentStatus });
-    return res
-      .status(400)
-      .json({ message: "Invalid paymentStatus. Must be 'paid' or 'unpaid'" });
+    return res.status(400).json({
+      message: "Invalid paymentStatus. Must be 'paid', 'unpaid' or 'pending'",
+    });
   }
   if (!req.user || !req.user._id) {
     console.log("Validation failed: User not authenticated", {
@@ -130,7 +130,7 @@ router.post("/:id/finalize", protect, async (req, res) => {
 
     if (
       checkout.paymentStatus === "paid" ||
-      checkout.paymentStatus === "unpaid"||
+      checkout.paymentStatus === "unpaid" ||
       checkout.paymentStatus === "pending" // Cho VNPay
     ) {
       // 🔥 Trừ tồn kho cho từng sản phẩm
