@@ -1,175 +1,138 @@
 // backend/routes/vnpayRoutes.js
 const express = require("express");
 const router = express.Router();
-const { VNPay } = require("vnpay");
-
-// ==== LOAD ENV ====
+const { VNPay, ignoreLogger, ProductCode, VnpLocale } = require("vnpay");
 require("dotenv").config();
 
-// Kiểm tra env
+// ==================== CẤU HÌNH VNPAY (chỉ dùng 3 biến cũ) ====================
 const tmnCode = process.env.VNPAY_TMN_CODE?.trim();
 const secureSecret = process.env.VNPAY_HASH_SECRET?.trim();
+const returnUrl = process.env.VNPAY_RETURN_URL?.trim(); // bắt buộc https public
 
-if (!tmnCode || !secureSecret) {
-  console.error("❌ Thiếu biến môi trường VNPay");
-  console.error("VNPAY_TMN_CODE:", tmnCode ? "OK" : "MISSING");
-  console.error("VNPAY_HASH_SECRET:", secureSecret ? "OK" : "MISSING");
+if (!tmnCode || !secureSecret || !returnUrl) {
+  console.error("VNPay env missing!");
+  process.exit(1);
 }
 
-// ==== KHỞI TẠO VNPAY ====
-let vnpay;
-try {
-  vnpay = new VNPay({
-    tmnCode,
-    secureSecret,
-    vnpayHost: "https://sandbox.vnpayment.vn",
-    testMode: true,
-    hashAlgorithm: "SHA512",
-    enableLog: true,
-  });
-  console.log("✅ VNPay initialized");
-} catch (err) {
-  console.error("❌ Lỗi khởi tạo VNPay:", err.message);
-}
+const vnpay = new VNPay({
+  tmnCode,
+  secureSecret,
+  vnpayHost:
+    process.env.NODE_ENV === "production"
+      ? "https://pay.vnpayment.vn"
+      : "https://sandbox.vnpayment.vn",
+  hashAlgorithm: "SHA512",
+  loggerFn: ignoreLogger,
+});
 
-// ==== FRONTEND URLS ====
-const FRONTEND_BASE = "https://rabbit-store-yvxj.vercel.app";
-const SUCCESS_PAGE = `${FRONTEND_BASE}/order-success`;
-const FAILED_PAGE = `${FRONTEND_BASE}/checkout`;
+// ==================== Helper ====================
+const getClientIp = (req) =>
+  (
+    req.headers["x-forwarded-for"]?.split(",")[0] ||
+    req.ip ||
+    req.connection?.remoteAddress ||
+    "127.0.0.1"
+  ).replace(/^::ffff:/, "");
 
-// ==== Lấy IP ====
-const getIp = (req) => {
-  const forwarded = req.headers["x-forwarded-for"];
-  if (forwarded) return forwarded.split(",")[0].trim().replace(/^::ffff:/, "");
-  return (req.ip || req.connection?.remoteAddress || "127.0.0.1").replace(/^::ffff:/, "");
+const formatVNPayDate = (minutes = 0) => {
+  const d = new Date(Date.now() + minutes * 60000);
+  return d
+    .toISOString()
+    .replace(/[-:T.]/g, "")
+    .slice(0, 14);
 };
 
-// ==== Format thời gian VNPay (UTC+7) ====
-function VNPayTimePlus(minutes) {
-  const date = new Date(Date.now() + minutes * 60000);
-  date.setHours(date.getHours() + 7); // chuyển từ UTC sang GMT+7
+const generateTxnRef = (checkoutId) => `${checkoutId}_${Date.now()}`;
 
-  const yyyy = date.getFullYear();
-  const MM = String(date.getMonth() + 1).padStart(2, "0");
-  const dd = String(date.getDate()).padStart(2, "0");
-  const hh = String(date.getHours()).padStart(2, "0");
-  const mm = String(date.getMinutes()).padStart(2, "0");
-  const ss = String(date.getSeconds()).padStart(2, "0");
+// Frontend URL cứng luôn (bro đang deploy Vercel)
+const FRONTEND_URL = "https://rabbit-store-yvxj.vercel.app";
 
-  return `${yyyy}${MM}${dd}${hh}${mm}${ss}`;
-}
-
-// ==================== TẠO LINK THANH TOÁN ====================
+// ==================== CREATE PAYMENT URL ====================
 router.post("/create-payment", async (req, res) => {
-  if (!vnpay) {
-    return res.status(500).json({ success: false, message: "VNPay chưa cấu hình" });
-  }
-
   try {
     const { checkoutId, amount } = req.body;
 
-    if (!checkoutId || !amount) {
-      return res.status(400).json({ success: false, message: "Thiếu checkoutId hoặc amount" });
+    if (!checkoutId || !amount || amount < 1000) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Invalid amount or checkoutId" });
     }
 
-    const amountNum = Math.round(Number(amount));
-    if (isNaN(amountNum) || amountNum < 1000) {
-      return res.status(400).json({ success: false, message: "Amount phải ≥ 1000" });
-    }
-
-    const cleanCheckoutId = String(checkoutId).trim();
-    if (cleanCheckoutId.length === 0 || cleanCheckoutId.length > 50) {
-      return res.status(400).json({ success: false, message: "checkoutId không hợp lệ" });
-    }
-
-    const returnUrl =
-      `${process.env.VNPAY_RETURN_URL}?checkoutId=${encodeURIComponent(cleanCheckoutId)}`;
-
-    // Thời gian chuẩn VNPay
-    const createDate = VNPayTimePlus(0);
-    const expireDate = VNPayTimePlus(15); // 15 phút
+    const txnRef = generateTxnRef(checkoutId);
 
     const paymentUrl = vnpay.buildPaymentUrl({
-      vnp_Amount: amountNum * 100,
-      vnp_TxnRef: cleanCheckoutId,
-      vnp_OrderInfo: `Thanh toan don hang ${cleanCheckoutId}`,
-      vnp_OrderType: "250000",
+      vnp_Amount: Math.round(amount) * 100,
+      vnp_TxnRef: txnRef,
+      vnp_OrderInfo: `Thanh toan don hang ${checkoutId}`,
+      vnp_OrderType: ProductCode.Other,
       vnp_ReturnUrl: returnUrl,
-      vnp_IpAddr: getIp(req),
-      vnp_Locale: "vn",
-      vnp_CreateDate: createDate,
-      vnp_ExpireDate: expireDate,
+      vnp_IpAddr: getClientIp(req),
+      vnp_Locale: VnpLocale.VN,
+      vnp_CreateDate: formatVNPayDate(0),
+      vnp_ExpireDate: formatVNPayDate(15),
     });
-
-    console.log("✅ Tạo URL thành công:", paymentUrl);
 
     res.json({
       success: true,
       paymentUrl,
-      amount: amountNum,
-      checkoutId: cleanCheckoutId,
+      txnRef,
+      checkoutId,
     });
-  } catch (error) {
-    console.error("❌ LỖI /create-payment:", error);
-    res.status(500).json({ success: false, message: "Lỗi server" });
+  } catch (err) {
+    console.error("VNPay create-payment error:", err);
+    res.status(500).json({ success: false, message: "Server error" });
   }
 });
 
-// ==================== VNPAY RETURN ====================
+// ==================== VNPAY RETURN (người dùng thấy) ====================
 router.get("/vnpay-return", async (req, res) => {
-  if (!vnpay) {
-    return res.redirect(`${FAILED_PAGE}?status=failed&code=99&reason=config`);
-  }
-
   try {
-    const query = req.query;
-    const result = vnpay.verifyReturnUrl(query);
+    const result = vnpay.verifyReturnUrl(req.query);
 
-    const checkoutId = query.checkoutId || query.vnp_TxnRef;
-    const code = query.vnp_ResponseCode;
-
-    console.log("VNPAY RETURN:", { checkoutId, code, verified: result.isVerified });
-
-    if (result.isVerified && result.isSuccess && code === "00") {
-      return res.redirect(`${SUCCESS_PAGE}?checkoutId=${checkoutId}&status=success`);
+    if (result.isVerified && result.isSuccess) {
+      const checkoutId = req.query.vnp_TxnRef.split("_")[0];
+      return res.redirect(
+        `${FRONTEND_URL}/order-confirmation?checkoutId=${checkoutId}&status=success`
+      );
     } else {
-      return res.redirect(`${FAILED_PAGE}?status=failed&code=${code}&reason=vnpay`);
+      return res.redirect(
+        `${FRONTEND_URL}/checkout?status=failed&code=${
+          req.query.vnp_ResponseCode || 99
+        }`
+      );
     }
-  } catch (error) {
-    console.error("LỖI /vnpay-return:", error);
-    res.redirect(`${FAILED_PAGE}?status=failed&code=99&reason=server`);
+  } catch (err) {
+    console.error("vnpay-return error:", err);
+    return res.redirect(`${FRONTEND_URL}/checkout?status=failed&code=99`);
   }
 });
 
-// ==================== VNPAY IPN ====================
+// ==================== VNPAY IPN (server-server) – QUAN TRỌNG NHẤT ====================
 router.get("/vnpay-ipn", async (req, res) => {
-  if (!vnpay) {
-    return res.json({ RspCode: "99", Message: "VNPay not configured" });
-  }
-
   try {
-    const query = req.query;
-    const result = vnpay.verifyIpnCall(query);
-
-    console.log("VNPAY IPN:", {
-      txnRef: query.vnp_TxnRef,
-      code: query.vnp_ResponseCode,
-      verified: result.isVerified,
-      success: result.isSuccess,
-    });
+    const result = vnpay.verifyIpnCall(req.query);
 
     if (!result.isVerified) {
-      return res.json({ RspCode: "97", Message: "Invalid signature" });
+      return res.json({ RspCode: "97", Message: "Checksum failed" });
     }
 
-    if (result.isSuccess && query.vnp_ResponseCode === "00") {
-      console.log(`IPN: Đơn ${query.vnp_TxnRef} thanh toán thành công`);
+    if (result.isSuccess && req.query.vnp_ResponseCode === "00") {
+      const checkoutId = req.query.vnp_TxnRef.split("_")[0];
+
+      // Ở ĐÂY BRO CẬP NHẬT ĐƠN HÀNG THÀNH "paid"
+      // Ví dụ: await Checkout.findByIdAndUpdate(checkoutId, { paymentStatus: "paid" });
+
+      console.log("IPN SUCCESS → Cập nhật đơn hàng:", checkoutId, "thành paid");
+
       return res.json({ RspCode: "00", Message: "Confirm Success" });
-    } else {
-      return res.json({ RspCode: query.vnp_ResponseCode || "02", Message: "Failed" });
     }
-  } catch (error) {
-    console.error("Lỗi /vnpay-ipn:", error);
+
+    return res.json({
+      RspCode: req.query.vnp_ResponseCode || "02",
+      Message: "Failed",
+    });
+  } catch (err) {
+    console.error("vnpay-ipn error:", err);
     res.json({ RspCode: "99", Message: "Unknown error" });
   }
 });

@@ -11,24 +11,28 @@ const OrderConfirmationPage = () => {
   const { paymentMethod } = location.state || {};
   const { checkout } = useSelector((state) => state.checkout);
 
-  useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const fromVNPay = urlParams.get("from") === "vnpay";
-    const checkoutIdFromUrl = urlParams.get("checkoutId");
+useEffect(() => {
+  const urlParams = new URLSearchParams(window.location.search);
+  const status = urlParams.get("status");
+  const checkoutIdFromUrl = urlParams.get("checkoutId");
 
-    if (fromVNPay && checkoutIdFromUrl) {
-      // Từ VNPay trả về thành công
-      dispatch(clearCart());
-      localStorage.removeItem("cart");
-      dispatch(fetchUserOrders());
-    } else if (checkout && checkout._id) {
-      dispatch(clearCart());
-      localStorage.removeItem("cart");
-      dispatch(fetchUserOrders());
-    } else {
-      navigate("/my-orders");
-    }
-  }, [checkout, dispatch, navigate]);
+  // Từ VNPay trả về thành công
+  if (status === "success" && checkoutIdFromUrl) {
+    dispatch(clearCart());
+    localStorage.removeItem("cart");
+    dispatch(fetchUserOrders());
+    // Có thể fetch lại đơn hàng nếu cần
+  }
+  // Từ COD hoặc PayPal
+  else if (checkout && checkout._id) {
+    dispatch(clearCart());
+    localStorage.removeItem("cart");
+    dispatch(fetchUserOrders());
+  }
+  else {
+    navigate("/my-orders");
+  }
+}, [checkout, dispatch, navigate]);
   const calculatedEstimatedDelivery = (createdAt) => {
     const orderDate = new Date(createdAt);
     orderDate.setDate(orderDate.getDate() + 3);
