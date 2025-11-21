@@ -19,8 +19,8 @@ const vnpay = new VNPay({
   secureSecret,
   vnpayHost:
     process.env.NODE_ENV === "production"
-      ? "https://pay.vnpayment.vn"
-      : "https://sandbox.vnpayment.vn",
+      ? "https://sandbox.vnpayment.vn"
+      : "https://pay.vnpay.vn",
   hashAlgorithm: "SHA512",
   loggerFn: ignoreLogger,
 });
