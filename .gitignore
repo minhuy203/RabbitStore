@@ -12,5 +12,3 @@ backend/.env
 
 desktop.ini
  
-.vercel
-.env*.local
