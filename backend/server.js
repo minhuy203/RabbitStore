@@ -13,9 +13,6 @@ const productAdminRoutes = require("./routes/productAdminRoutes");
 const adminOrderRoutes = require("./routes/adminOrderRoutes");
 const productRoutes = require("./routes/productRoutes");
 
-// THÊM DÒNG NÀY
-const vnpayRoutes = require("./routes/vnpayRoutes");
-
 const app = express();
 app.use(express.json());
 app.use(cors());
@@ -39,9 +36,6 @@ app.use("/api/checkout", checkoutRoutes);
 app.use("/api/orders", orderRoutes);
 app.use("/api/upload", uploadRoutes);
 app.use("/api", subscribeRoute);
-
-// THÊM DÒNG NÀY
-app.use("/api/vnpay", vnpayRoutes);
 
 //admin
 app.use("/api/admin/users", adminRoutes);

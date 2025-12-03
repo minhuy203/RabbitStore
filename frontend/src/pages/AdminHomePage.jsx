@@ -134,7 +134,10 @@ const AdminHomePage = () => {
           <div className="p-4 shadow-md rounded-lg bg-white">
             <h2 className="text-xl font-semibold">Tổng sản phẩm</h2>
             <p className="text-2xl">{products.length}</p>
-            <Link to="/admin/products" className="text-blue-500 hover:underline">
+            <Link
+              to="/admin/products"
+              className="text-blue-500 hover:underline"
+            >
               Quản lý sản phẩm
             </Link>
           </div>
@@ -144,7 +147,9 @@ const AdminHomePage = () => {
       <div className="mt-6">
         <h2 className="text-2xl font-bold mb-4">Thống kê đơn hàng</h2>
         <div className="mb-4">
-          <label className="block text-gray-700 mb-2">Chọn khoảng thời gian:</label>
+          <label className="block text-gray-700 mb-2">
+            Chọn khoảng thời gian:
+          </label>
           <input
             id="dateRangePicker"
             type="text"
@@ -160,11 +165,15 @@ const AdminHomePage = () => {
           </div>
           <div className="p-4 shadow-md rounded-lg bg-white">
             <h3 className="text-lg font-semibold">Doanh thu</h3>
-            <p className="text-2xl">{formatVND(filteredStats.filteredTotalSales)}</p>
+            <p className="text-2xl">
+              {formatVND(filteredStats.filteredTotalSales)}
+            </p>
           </div>
         </div>
 
-        <h3 className="text-xl font-semibold mb-4">Danh sách đơn hàng (Đã giao hàng)</h3>
+        <h3 className="text-xl font-semibold mb-4">
+          Danh sách đơn hàng (Đã giao hàng)
+        </h3>
         <div className="overflow-x-auto">
           <table className="min-w-full text-left text-gray-500">
             <thead className="bg-gray-100 text-xs uppercase text-gray-700">
@@ -179,9 +188,14 @@ const AdminHomePage = () => {
             <tbody>
               {currentItems.length > 0 ? (
                 currentItems.map((order) => (
-                  <tr key={order._id} className="border-b hover:bg-gray-50 cursor-pointer">
+                  <tr
+                    key={order._id}
+                    className="border-b hover:bg-gray-50 cursor-pointer"
+                  >
                     <td className="p-4">{order._id}</td>
-                    <td className="p-4">{order.user?.name || "Không xác định"}</td>
+                    <td className="p-4">
+                      {order.user?.name || "Không xác định"}
+                    </td>
                     <td className="p-4">{formatVND(order.totalPrice)}</td>
                     <td className="p-4">{mapStatus(order.status)}</td>
                     <td className="p-4">

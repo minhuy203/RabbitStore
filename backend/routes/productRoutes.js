@@ -45,19 +45,27 @@ router.get("/", async (req, res) => {
       query.category = sanitizeQuery(category);
     }
     if (material) {
-      const materials = sanitizeQuery(material).split(",").filter((m) => m);
+      const materials = sanitizeQuery(material)
+        .split(",")
+        .filter((m) => m);
       if (materials.length) query.material = { $in: materials };
     }
     if (brand) {
-      const brands = sanitizeQuery(brand).split(",").filter((b) => b);
+      const brands = sanitizeQuery(brand)
+        .split(",")
+        .filter((b) => b);
       if (brands.length) query.brand = { $in: brands };
     }
     if (size) {
-      const sizes = sanitizeQuery(size).split(",").filter((s) => s);
+      const sizes = sanitizeQuery(size)
+        .split(",")
+        .filter((s) => s);
       if (sizes.length) query.sizes = { $in: sizes };
     }
     if (color) {
-      const colors = sanitizeQuery(color).split(",").filter((c) => c);
+      const colors = sanitizeQuery(color)
+        .split(",")
+        .filter((c) => c);
       if (colors.length) query.colors = { $in: colors };
     }
     if (gender) {
@@ -75,10 +83,7 @@ router.get("/", async (req, res) => {
     if (search) {
       const sanitizedSearch = sanitizeQuery(search);
       if (sanitizedSearch) {
-        query.$or = [
-          { name: { $regex: sanitizedSearch, $options: "i" } },
-          { description: { $regex: sanitizedSearch, $options: "i" } },
-        ];
+        query.name = { $regex: sanitizedSearch, $options: "i" }; // Chỉ tìm trong name
       }
     }
 

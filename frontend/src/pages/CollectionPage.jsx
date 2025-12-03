@@ -19,13 +19,26 @@ const CollectionPage = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const currentPage = parseInt(searchParams.get("page")) || 1;
 
+  const isFirstLoad = useRef(true);
+
   useEffect(() => {
     const queryParams = Object.fromEntries([...searchParams]);
+
+    if (isFirstLoad.current) {
+      isFirstLoad.current = false;
+      if (Object.keys(queryParams).length > 0) {
+        const cleanParams =
+          collection && collection !== "all" ? { collection } : {};
+        setSearchParams(cleanParams, { replace: true });
+        return;
+      }
+    }
+
     const page = parseInt(queryParams.page) || 1;
 
     dispatch(
       fetchProductsByFilters({
-        collection,
+        collection: collection && collection !== "all" ? collection : undefined,
         ...queryParams,
         page,
         limit: 12,
