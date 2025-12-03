@@ -11,28 +11,27 @@ const OrderConfirmationPage = () => {
   const { paymentMethod } = location.state || {};
   const { checkout } = useSelector((state) => state.checkout);
 
-useEffect(() => {
-  const urlParams = new URLSearchParams(window.location.search);
-  const status = urlParams.get("status");
-  const checkoutIdFromUrl = urlParams.get("checkoutId");
+  useEffect(() => {
+    const urlParams = new URLSearchParams(location.search);
+    const orderIdFromUrl = urlParams.get("orderId");
+    const methodFromUrl = urlParams.get("method");
 
-  // Từ VNPay trả về thành công
-  if (status === "success" && checkoutIdFromUrl) {
-    dispatch(clearCart());
-    localStorage.removeItem("cart");
-    dispatch(fetchUserOrders());
-    // Có thể fetch lại đơn hàng nếu cần
-  }
-  // Từ COD hoặc PayPal
-  else if (checkout && checkout._id) {
-    dispatch(clearCart());
-    localStorage.removeItem("cart");
-    dispatch(fetchUserOrders());
-  }
-  else {
+    if (orderIdFromUrl && methodFromUrl === "ZaloPay") {
+      dispatch(clearCart());
+      localStorage.removeItem("cart");
+      dispatch(fetchUserOrders());
+      return;
+    }
+
+    if (location.state?.checkoutId || checkout?._id) {
+      dispatch(clearCart());
+      localStorage.removeItem("cart");
+      dispatch(fetchUserOrders());
+      return;
+    }
+
     navigate("/my-orders");
-  }
-}, [checkout, dispatch, navigate]);
+  }, [dispatch, navigate, location, checkout]);
   const calculatedEstimatedDelivery = (createdAt) => {
     const orderDate = new Date(createdAt);
     orderDate.setDate(orderDate.getDate() + 3);

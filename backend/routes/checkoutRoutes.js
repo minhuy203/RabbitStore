@@ -4,6 +4,7 @@ const Cart = require("../models/Cart");
 const Order = require("../models/Order");
 const Product = require("../models/Product");
 const { protect } = require("../middleware/authMiddleware");
+const CryptoJS = require("crypto-js");
 
 const router = express.Router();
 
@@ -193,6 +194,181 @@ router.post("/:id/finalize", protect, async (req, res) => {
     }
   } catch (error) {
     return res.status(500).json({ message: `Server error: ${error.message}` });
+  }
+});
+
+const ZALOPAY_CONFIG = {
+  app_id: "554",
+  key1: "8NdU5pG5R2spGHGhyO99HN1OhD8IQJBn",
+  key2: "uUfsWgfLkRLzq6W2uNXTCxrfxs51auny",
+  endpoint: "https://sb-openapi.zalopay.vn/v2/create",
+};
+
+// 1. Tạo link thanh toán ZaloPay (giữ nguyên)
+router.post("/zalopay/create", protect, async (req, res) => {
+  try {
+    const { checkoutId } = req.body;
+    if (!checkoutId)
+      return res.status(400).json({ message: "Thiếu checkoutId" });
+
+    const checkout = await Checkout.findById(checkoutId);
+    if (!checkout || checkout.user.toString() !== req.user._id.toString()) {
+      return res.status(404).json({ message: "Checkout không tồn tại" });
+    }
+
+    const items = checkout.checkoutItems.map((item) => ({
+      itemid: item.productId.toString(),
+      itemname: item.name,
+      itemprice: item.discountPrice || item.price,
+      itemquantity: item.quantity,
+    }));
+
+    const order = {
+      app_id: ZALOPAY_CONFIG.app_id,
+      app_trans_id: `${new Date()
+        .toISOString()
+        .slice(2, 10)
+        .replace(/-/g, "")}_${Date.now()}`,
+      app_user: "rabbitstore",
+      app_time: Date.now(),
+      amount: Math.round(checkout.totalPrice),
+      description: `Thanh toán đơn #${checkoutId}`,
+      title: "Rabbit Store",
+      item: JSON.stringify(items),
+      embed_data: JSON.stringify({
+        redirecturl: `${
+          process.env.FRONTEND_URL || "http://localhost:5173"
+        }/order-confirmation`,
+        checkoutId: checkoutId.toString(),
+      }),
+      bank_code: "",
+      callback_url: `${
+        process.env.BACKEND_URL || "http://localhost:9000"
+      }/api/checkout/zalopay/callback`,
+    };
+
+    const dataString = `${order.app_id}|${order.app_trans_id}|${order.app_user}|${order.amount}|${order.app_time}|${order.embed_data}|${order.item}`;
+    order.mac = CryptoJS.HmacSHA256(dataString, ZALOPAY_CONFIG.key1).toString();
+
+    const response = await fetch(ZALOPAY_CONFIG.endpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams(order),
+    });
+
+    const result = await response.json();
+
+    if (result.return_code === 1) {
+      res.json({ success: true, order_url: result.order_url });
+    } else {
+      res.status(400).json({ message: result.return_message || "Lỗi ZaloPay" });
+    }
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+// 2. Callback từ ZaloPay → TỰ ĐỘNG tạo Order (không cần frontend gọi finalize nữa)
+router.post("/zalopay/callback", async (req, res) => {
+  try {
+    const { data, mac } = req.body;
+    const calculatedMac = CryptoJS.HmacSHA256(
+      data,
+      ZALOPAY_CONFIG.key2
+    ).toString();
+
+    if (calculatedMac !== mac) {
+      return res.json({ return_code: -1, return_message: "mac not equal" });
+    }
+
+    const result = JSON.parse(data);
+    const embedData = JSON.parse(result.embed_data || "{}");
+    const checkoutId = embedData.checkoutId;
+
+    let createdOrderId = null;
+
+    if (checkoutId) {
+      const checkout = await Checkout.findById(checkoutId).populate("user");
+
+      if (checkout && !checkout.isFinalized) {
+        // 1. Cập nhật trạng thái paid
+        checkout.paymentStatus = "paid";
+        checkout.isPaid = true;
+        checkout.paidAt = Date.now();
+        await checkout.save();
+
+        // 2. Trừ tồn kho
+        for (const item of checkout.checkoutItems) {
+          const product = await Product.findById(item.productId);
+          if (!product) {
+            console.error(`Product not found: ${item.productId}`);
+            continue;
+          }
+          if (product.countInStock < item.quantity) {
+            console.error(`Not enough stock for ${product.name}`);
+            // Vẫn tiếp tục tạo đơn (đã thanh toán) nhưng ghi log để xử lý sau
+            continue;
+          }
+          product.countInStock -= item.quantity;
+          await product.save();
+        }
+
+        // 3. Chuẩn bị orderItems (lấy discountPrice mới nhất nếu có)
+        const orderItems = await Promise.all(
+          checkout.checkoutItems.map(async (item) => {
+            const product = await Product.findById(item.productId);
+            return {
+              productId: item.productId,
+              name: item.name,
+              image: item.image,
+              price: item.price,
+              discountPrice: item.discountPrice || product?.discountPrice || 0,
+              size: item.size,
+              color: item.color,
+              quantity: item.quantity,
+            };
+          })
+        );
+
+        // 4. Tạo Order thật sự
+        const newOrder = await Order.create({
+          user: checkout.user,
+          orderItems,
+          shippingAddress: checkout.shippingAddress,
+          paymentMethod: checkout.paymentMethod,
+          totalPrice: checkout.totalPrice,
+          isPaid: true,
+          paidAt: checkout.paidAt,
+          paymentStatus: "paid",
+          paymentDetails: {
+            gateway: "ZaloPay",
+            apptransid: result.app_trans_id,
+          },
+        });
+
+        createdOrderId = newOrder._id;
+
+        // 5. Đánh dấu checkout đã hoàn tất
+        checkout.isFinalized = true;
+        checkout.finalizedAt = Date.now();
+        await checkout.save();
+
+        // 6. Xóa giỏ hàng của user
+        await Cart.findOneAndDelete({ user: checkout.user });
+      }
+    }
+
+    // Trả về redirecturl kèm orderId để frontend hiển thị ngay
+    const frontendUrl = process.env.FRONTEND_URL || "http://localhost:5173";
+    return res.json({
+      return_code: 1,
+      return_message: "success",
+      redirecturl: `${frontendUrl}/order-confirmation?orderId=${createdOrderId}&method=ZaloPay`,
+    });
+  } catch (err) {
+    console.error("ZaloPay callback error:", err);
+    return res.json({ return_code: 0, return_message: "error" });
   }
 });
 

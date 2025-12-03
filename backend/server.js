@@ -13,7 +13,10 @@ const productAdminRoutes = require("./routes/productAdminRoutes");
 const adminOrderRoutes = require("./routes/adminOrderRoutes");
 const productRoutes = require("./routes/productRoutes");
 
+
+
 const app = express();
+app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(cors());
 
@@ -36,6 +39,8 @@ app.use("/api/checkout", checkoutRoutes);
 app.use("/api/orders", orderRoutes);
 app.use("/api/upload", uploadRoutes);
 app.use("/api", subscribeRoute);
+
+
 
 //admin
 app.use("/api/admin/users", adminRoutes);

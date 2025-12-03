@@ -12,7 +12,7 @@ const Checkout = () => {
   const { user } = useSelector((state) => state.auth);
 
   const [checkoutId, setCheckoutId] = useState(null);
-  const [showPaymentOptions, setShowPaymentOptions] = useState(false); // New state to control button visibility
+  const [showPaymentOptions, setShowPaymentOptions] = useState(false);
   const [shippingAddress, setShippingAddress] = useState({
     firstName: "",
     lastName: "",
@@ -22,16 +22,11 @@ const Checkout = () => {
   });
   const [phoneError, setPhoneError] = useState("");
 
-  // Regex kiểm tra số điện thoại: đúng 10 chữ số
   const phoneRegex = /^\d{10}$/;
 
   const validatePhone = (phone) => {
-    if (!phone) {
-      return "Vui lòng nhập số điện thoại";
-    }
-    if (!phoneRegex.test(phone)) {
-      return "Số điện thoại phải có đúng 10 chữ số";
-    }
+    if (!phone) return "Vui lòng nhập số điện thoại";
+    if (!phoneRegex.test(phone)) return "Số điện thoại phải có đúng 10 chữ số";
     return "";
   };
 
@@ -46,8 +41,6 @@ const Checkout = () => {
         "Giỏ hàng của bạn đang trống. Vui lòng thêm sản phẩm trước khi thanh toán."
       );
       navigate("/");
-    } else {
-      console.log("Cart data:", cart);
     }
   }, [cart, navigate]);
 
@@ -70,19 +63,6 @@ const Checkout = () => {
       return;
     }
 
-    if (
-      !cart ||
-      !cart.products ||
-      !Array.isArray(cart.products) ||
-      cart.products.length === 0
-    ) {
-      alert(
-        "Giỏ hàng của bạn đang trống. Vui lòng thêm sản phẩm trước khi thanh toán."
-      );
-      navigate("/");
-      return;
-    }
-
     const checkoutItems = cart.products.map((product) => ({
       productId: product.productId || product._id,
       name: product.name,
@@ -102,21 +82,20 @@ const Checkout = () => {
       totalPrice: cart.totalPrice,
     };
 
-    console.log("Checkout payload:", payload);
-
     try {
       const res = await dispatch(createCheckout(payload)).unwrap();
       if (res && res._id) {
         setCheckoutId(res._id);
-        setShowPaymentOptions(true); // Show payment options after successful checkout creation
+        setShowPaymentOptions(true);
         return res._id;
       } else {
         throw new Error("Không nhận được checkoutId từ phản hồi API");
       }
     } catch (err) {
       console.error("Lỗi khi tạo checkout:", err);
-      const errorMessage = err.message || err || "Vui lòng thử lại.";
-      alert(`Có lỗi xảy ra khi tạo đơn hàng: ${errorMessage}`);
+      alert(
+        `Có lỗi xảy ra khi tạo đơn hàng: ${err.message || "Vui lòng thử lại."}`
+      );
     }
   };
 
@@ -128,13 +107,11 @@ const Checkout = () => {
         "paid"
       );
 
-      if (!checkoutId) {
-        throw new Error("Không thể tạo checkout cho PayPal");
-      }
+      if (!checkoutId) throw new Error("Không thể tạo checkout cho PayPal");
 
-      const response = await axios.put(
+      await axios.put(
         `${import.meta.env.VITE_BACKEND_URL}/api/checkout/${checkoutId}/pay`,
-        { paymentStatus: "paid", paymentDetails: details, checkoutId },
+        { paymentStatus: "paid", paymentDetails: details },
         {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("userToken")}`,
@@ -142,13 +119,8 @@ const Checkout = () => {
         }
       );
 
-      if (response.status === 200) {
-        await handleFinalizeCheckout(checkoutId, "PayPal");
-      } else {
-        throw new Error("Phản hồi API không thành công");
-      }
+      await handleFinalizeCheckout(checkoutId, "PayPal");
     } catch (error) {
-      console.error("Lỗi thanh toán PayPal:", error);
       alert("Thanh toán PayPal thất bại: " + error.message);
     }
   };
@@ -161,26 +133,47 @@ const Checkout = () => {
         "unpaid"
       );
 
-      if (!checkoutId) {
-        throw new Error("Không thể tạo checkout cho COD");
-      }
-
-      console.log("Thanh toán khi nhận hàng (COD) thành công", {
-        checkoutId,
-        shippingAddress,
-        cart,
-      });
+      if (!checkoutId) throw new Error("Không thể tạo checkout cho COD");
 
       await handleFinalizeCheckout(
         checkoutId,
         "Thanh toán khi nhận hàng (COD)"
       );
     } catch (error) {
-      console.error("Lỗi thanh toán COD:", error);
       alert("Thanh toán COD thất bại: " + error.message);
     }
   };
 
+  const handleZaloPayPayment = async () => {
+    try {
+      const checkoutId = await handleCreateCheckout(
+        { preventDefault: () => {} },
+        "ZaloPay",
+        "paid"
+      );
+
+      const response = await fetch(
+        `${import.meta.env.VITE_BACKEND_URL}/api/checkout/zalopay/create`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("userToken")}`,
+          },
+          body: JSON.stringify({ checkoutId }),
+        }
+      );
+
+      const data = await response.json();
+      if (data.success && data.order_url) {
+        window.location.href = data.order_url;
+      } else {
+        alert("Lỗi tạo link ZaloPay");
+      }
+    } catch (err) {
+      alert("Lỗi ZaloPay: " + err.message);
+    }
+  };
   const handleFinalizeCheckout = async (checkoutId, paymentMethod) => {
     try {
       const response = await axios.post(
@@ -194,36 +187,22 @@ const Checkout = () => {
           },
         }
       );
+
       if (response.status === 200 || response.status === 201) {
         navigate("/order-confirmation", {
-          state: {
-            paymentMethod,
-            shippingAddress,
-            checkoutId,
-          },
+          state: { paymentMethod, shippingAddress, checkoutId },
         });
-      } else {
-        throw new Error("Không thể hoàn tất đơn hàng");
       }
     } catch (error) {
-      console.error("Lỗi khi hoàn tất checkout:", error);
-      alert("Có lỗi xảy ra khi hoàn tất đơn hàng: " + error.message);
+      alert("Hoàn tất đơn hàng thất bại: " + error.message);
     }
   };
 
   if (loading) return <p>Đang tải giỏ hàng...</p>;
   if (error) return <p>Lỗi: {error}</p>;
-  if (
-    !cart ||
-    !cart.products ||
-    !Array.isArray(cart.products) ||
-    cart.products.length === 0
-  ) {
-    return <p>Giỏ hàng của bạn đang trống.</p>;
-  }
+  if (!cart?.products?.length) return <p>Giỏ hàng của bạn đang trống.</p>;
 
   const paypalAmount = (cart.totalPrice / 25000).toFixed(2);
-
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-7xl mx-auto py-10 px-6 tracking-tighter">
@@ -328,12 +307,13 @@ const Checkout = () => {
               )}
             </div>
           </div>
-          {!showPaymentOptions && ( // Conditionally render the "Tiếp tục thanh toán" button
+
+          {!showPaymentOptions && (
             <div className="mt-6">
               <button
                 type="submit"
                 className="w-full bg-black text-white py-3 rounded disabled:bg-gray-400"
-                disabled={phoneError}
+                disabled={!!phoneError}
               >
                 Tiếp tục thanh toán
               </button>
@@ -341,35 +321,45 @@ const Checkout = () => {
           )}
         </form>
 
-        {showPaymentOptions &&
-          checkoutId && ( // Show payment options only after checkoutId is set
-            <div className="mt-6">
-              <h3 className="text-lg mb-4">Phương thức thanh toán</h3>
-              <div className="flex flex-col gap-4">
-                <PayPalButton
-                  amount={paypalAmount}
-                  onSuccess={handlePaymentSuccess}
-                  onError={(err) =>
-                    alert("Thanh toán PayPal thất bại. Hãy thử lại: " + err)
-                  }
-                />
-          
-                <button
-                  onClick={handleCODPayment}
-                  className="w-full bg-green-600 text-white py-3 rounded hover:bg-green-700"
-                >
-                  Thanh toán trực tiếp (COD)
-                </button>
-              </div>
-              <p className="text-sm text-gray-600 mt-2">
-                Thanh toán PayPal sẽ được quy đổi sang USD (ước tính:{" "}
-                {paypalAmount} USD)
-              </p>
+        {/* PHẦN THANH TOÁN – CHỈ THÊM NÚT ZALOPAY */}
+        {showPaymentOptions && checkoutId && (
+          <div className="mt-6">
+            <h3 className="text-lg mb-4">Phương thức thanh toán</h3>
+            <div className="flex flex-col gap-4">
+              {/* PayPal – giữ nguyên */}
+              <PayPalButton
+                amount={paypalAmount}
+                onSuccess={handlePaymentSuccess}
+                onError={(err) =>
+                  alert("Thanh toán PayPal thất bại. Hãy thử lại: " + err)
+                }
+              />
+
+              {/* COD – giữ nguyên */}
+              <button
+                onClick={handleCODPayment}
+                className="w-full bg-green-600 text-white py-3 rounded hover:bg-green-700"
+              >
+                Thanh toán trực tiếp (COD)
+              </button>
+
+              {/* THÊM NÚT ZALOPAY MỚI */}
+              <button
+                onClick={handleZaloPayPayment}
+                className="w-full bg-gradient-to-r from-[#0165E1] to-[#014bb3] text-white py-4 rounded-lg font-medium flex items-center justify-center gap-3 hover:opacity-90 transition shadow-lg"
+              >
+                Thanh toán bằng ZaloPay
+              </button>
             </div>
-          )}
+            <p className="text-sm text-gray-600 mt-4">
+              Thanh toán PayPal sẽ được quy đổi sang USD (ước tính:{" "}
+              {paypalAmount} USD)
+            </p>
+          </div>
+        )}
       </div>
 
-      {/* Tóm tắt đơn hàng */}
+      {/* Tóm tắt đơn hàng – giữ nguyên 100% */}
       <div className="bg-gray-50 p-6 rounded-lg">
         <h3 className="text-lg mb-4">Tóm tắt đơn hàng</h3>
         <div className="border-t py-4 mb-4">
