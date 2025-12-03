@@ -13,13 +13,16 @@ const OrderConfirmationPage = () => {
 
   useEffect(() => {
     const urlParams = new URLSearchParams(location.search);
-    const orderIdFromUrl = urlParams.get("orderId");
-    const methodFromUrl = urlParams.get("method");
 
-    if (orderIdFromUrl && methodFromUrl === "ZaloPay") {
+    const zalopayStatusFromUrl = urlParams.get("status");
+    const appTransIdFromUrl = urlParams.get("apptransid");
+
+    if (zalopayStatusFromUrl === "1" && appTransIdFromUrl) {
       dispatch(clearCart());
       localStorage.removeItem("cart");
       dispatch(fetchUserOrders());
+
+      navigate("/order-confirmation", { replace: true });
       return;
     }
 
